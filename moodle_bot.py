@@ -1,11 +1,13 @@
 # moodle bot
 # Attends online classes
+import argparse
 import datetime
 import logging
 import os
 import pickle
 import re
 import threading
+import platform
 from os.path import exists
 from secrets import USERNAME, PASSWORD
 from time import sleep
@@ -21,17 +23,20 @@ from selenium.webdriver.support.ui import Select
 
 logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
 
-# Constants
+parser = argparse.ArgumentParser()
+parser.add_argument('-l', '--headless', action='store_true',
+                    help="run browser in headless mode")
+args = parser.parse_args()
+
+# PATHS
 COOKIES_PATH = "cookies/"
 PWD = os.getcwd()
-# FLASH_PATH = rf"{PWD}/drivers/libpepflashplayer.so"
 FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
-# FLASH_PATH = rf"{PWD}/drivers/libpepflashplayer-i386.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver-26"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
-
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver-86"
-HEADLESS = False
+
+HEADLESS = args.headless
 
 
 def chrome_builder():
@@ -103,7 +108,8 @@ def firefox_builder():
     binary = FirefoxBinary(FIREFOX_BINARY_PATH)
     profile = FirefoxProfile()
 
-    profile.set_preference("plugin.flash.path", FLASH_PATH)
+    if platform.system().lower() != "windows":
+        profile.set_preference("plugin.flash.path", FLASH_PATH)
     profile.set_preference("dom.ipc.plugins.flash.disable-protected-mode", True)
     profile.set_preference("plugins.flashBlock.enabled", False)
     profile.set_preference("plugin.state.flash", 2)
