@@ -7,6 +7,7 @@ import pickle
 import re
 import threading
 from os.path import exists
+from secrets import USERNAME, PASSWORD
 from time import sleep
 
 import schedule
@@ -17,8 +18,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.support.ui import Select
-
-from secrets import USERNAME, PASSWORD
 
 logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
 
@@ -101,9 +100,6 @@ def chrome_builder():
 
 
 def firefox_builder():
-    # profile_path = "/home/uzziel/Desktop/lms-autologin/nkf3bxn1.freshproflie"
-    # profile = FirefoxProfile(profile_path)
-
     binary = FirefoxBinary(FIREFOX_BINARY_PATH)
     profile = FirefoxProfile()
 
@@ -284,9 +280,8 @@ def is_even_week():
     return week_number % 2
 
 
-if __name__ == "__main__":
-    bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
-    func = bot.i_am_present
+def schedule_me(bot_obj):
+    func = bot_obj.i_am_present
 
     # fixed jobs
     schedule.every().saturday.at("08:00").do(func, at_course="زبان فا")
@@ -306,7 +301,13 @@ if __name__ == "__main__":
         schedule.every().saturday.at("15:00").do(func, at_course="سيگنال")
         schedule.every().sunday.at("13:00").do(func, at_course="مدار")
         schedule.every().tuesday.at("15:00").do(func, at_course="مباني داده")
+
     logging.info(f"All jobs added\n\t jobs:\n {schedule.jobs}")
+
+
+if __name__ == "__main__":
+    bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
+    schedule_me(bot)
 
     while True:
         schedule.run_pending()
