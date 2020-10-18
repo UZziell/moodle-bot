@@ -32,7 +32,7 @@ args = parser.parse_args()
 COOKIES_PATH = "cookies/"
 PWD = os.getcwd()
 FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
-FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver-26"
+FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver-86"
 
@@ -260,7 +260,8 @@ class MoodleBot:
     def run_all_in_thread(self, course, duration):
         # self.browser =
         self.browser.implicitly_wait(2)
-        self.browser.set_page_load_timeout(15)
+        # self.browser.set_page_load_timeout(15)
+
         # login to moodle
         self.moodle_login()
 
