@@ -52,22 +52,20 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 4. Copy `geckodriver` file to `moodle-bot/drivers/` directory
 5. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/`
 
-6. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
-
 #### windows
 
 3. Install downloaded firefox to `moodle-bot/firefox` directory (FF executable must be at `moodle-bot/firefox/firefox`)
 4. Extract and copy `geckodriver.exe` file to `moodle-bot/drivers/` directory
 5. Install Adobe flash player
-6. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
 
 \* **NOTE** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
  Despite of setting `app.update.auto` and `app.update.enabled` to `False` firefox keeps automatically updating itself.
  So search for `updater` and `maintainer` executables in firefox directory and **delete** them.
 <!-- USAGE EXAMPLES -->
 ## Usage
+1. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
 
-1. Add your weekly schedule to script
+2. Add your weekly schedule to script
 
     Well this is the ugliest part. To give the script your moodle course details(day of week and hour) you should manually
     edit the `schedule_me()` function in `moodle-bot.py`. So in `schedule_me()` function add entries per course with following format:
@@ -84,7 +82,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
     
     For a course that has classes every other week, add the entry to `# Odd weeks` or `# Even week`
 
-2. Finally run the script:
+3. Finally run the script:
     ```sh
     ~$ cd moodle-bot
     ~/moodle-bot$ python3 moodle_bot.py
