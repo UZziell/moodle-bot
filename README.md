@@ -63,7 +63,9 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
  So search for `updater` and `maintainer` executables in firefox directory and **delete** them.
 <!-- USAGE EXAMPLES -->
 ## Usage
-1. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
+1. You can whether rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password\
+    or\
+    supply --username YOUR_USERNAME and --password YOUR_PASSWORD command line arguments when running the script.
 
 2. Add your weekly schedule to script
 
@@ -75,7 +77,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
    `DAY_OF_THE_WEEK` is the week day of the class\
    `HH:MM` *str*  is the start time of the class\
    `COURSE NAME` *str*  is full or partial name of the course. For example, for the course `مباني داده کاوي` you could simply set it to `داده`\
-   `Minutes` *int*   is how long you want to be online in that class session of the course
+   `Minutes` *int*   is how long the bot will be online in the class
     
     example:\
         ```schedule.every().saturday.at("08:00").do(func, at_course="زبان فا", for_duration=95)```
@@ -87,7 +89,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
     ~$ cd moodle-bot
     ~/moodle-bot$ python3 moodle_bot.py
     ```
-    optionally you can pass -l or --headless to start browser in headless mode
+    optionally you can pass -l or --headless command line argument to start browser in headless mode
     ```sh
     ~/moodle-bot$ python3 moodle_bot.py --headless
     ```
