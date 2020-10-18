@@ -313,19 +313,6 @@ if __name__ == "__main__":
         schedule.run_pending()
         sleep(1)
 
-    # browser.get("https://www.picuki.com/tag/%D8%A8%D8%A7%D9%87%D9%85_%D8%AF%D8%B1%D9%85%D8%B3%DB%8C%D8%B1_%D8%AF%D8%B1%D8%A2%D9%85%D8%AF_%D8%B9%D8%A7%D9%84%DB%8C")
-    # browser.execute_script(f"window.open('{class_url}','_blank');");
-    # flash_obj = browser.find_element_by_xpath("/html/body/center/object/embed").click()
-    # actions = ActionChains(browser)
-    # actions.click(flash_obj)
-    # actions.key_down(Keys.ALT)
-    # actions.key_down("A")
-    # actions.key_up("A")
-    # actions.key_up(Keys.ALT)
-    # actions.perform()
-
-    # browser.save_screenshot("sc.png")
-
 
 def manually_add_flash_chrome(driver, web_url):
     def expand_root_element(element):
