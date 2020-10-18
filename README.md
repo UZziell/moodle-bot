@@ -64,14 +64,19 @@ git clone https://github.com/UZziell/moodle-bot.git
 <!-- USAGE EXAMPLES -->
 ## Usage
 
+* Add your weekly schedule to script
+
 Well this is the ugly part. To give the script your moodle course details(day of week and hour) you should manually
 edit the moodle-bot.py. In schedule_me function add entries per course with following format:
 
-`schedule.every().{DAY OF THE WEEK}.at("HH:MM").do(func, at_course="PARTIAL COURSE NAME")`
+`schedule.every().{DAY OF THE WEEK}.at("HH:MM").do(func, at_course="COURSE NAME", for_duration=M)`
+
+example:
+```schedule.every().saturday.at("08:00").do(func, at_course="زبان فا", for_duration=95)```
 
 For a course that has classes every other week, add the entry to `# Odd weeks` or `# Even week`
 
-Finally run the script:
+* Finally run the script:
 ```sh
 ~$ cd moodle-bot
 ~/moodle-bot$ python moodle_bot.py
