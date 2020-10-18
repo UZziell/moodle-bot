@@ -91,7 +91,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
     ```
     optionally you can pass -l or --headless to start browser in headless mode
     ```sh
-    ~/moodle-bot$ python3 moodle_bot.py --headles
+    ~/moodle-bot$ python3 moodle_bot.py --headless
     ```
 <!--
 ## Contribution
