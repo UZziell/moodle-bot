@@ -38,27 +38,27 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 * python selenium module and schedule module
 
 ### Installation
-* Clone the repo or download the zip file
+1. Clone the repo or download the zip file
     ```sh
     git clone https://github.com/UZziell/moodle-bot.git
     ```
-* install selenium and schedule modules
+2. install selenium and schedule modules
     ```sh
     pip3 install selenium schedule
     ```
 #### Linux
 
-2. Extract and copy downloaded firefox to moodle-bot directory (FF executable must be at `moodle-bot/firefox/firefox`)
-3. Copy `geckodriver` file to `moodle-bot/drivers/` directory
-4. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/`
+3. Extract and copy downloaded firefox to moodle-bot directory (FF executable must be at `moodle-bot/firefox/firefox`)
+4. Copy `geckodriver` file to `moodle-bot/drivers/` directory
+5. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/`
 
 6. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
 
 #### windows
 
-2. Install downloaded firefox to `moodle-bot/firefox` directory (FF executable must be at `moodle-bot/firefox/firefox`)
-3. Extract and copy `geckodriver.exe` file to `moodle-bot/drivers/` directory
-4. Install Adobe flash player
+3. Install downloaded firefox to `moodle-bot/firefox` directory (FF executable must be at `moodle-bot/firefox/firefox`)
+4. Extract and copy `geckodriver.exe` file to `moodle-bot/drivers/` directory
+5. Install Adobe flash player
 6. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
 
 \* **NOTE** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
