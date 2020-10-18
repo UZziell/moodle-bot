@@ -22,7 +22,7 @@
 A simple bot that automatically logs in to Moodle learning management system then attends Adobe online classes.
  It uses Selenium WebDriver and schedule module. 
 
-<!-- GETTING STARTED -->
+
 ## Getting Started
 
 To get a local copy up and running follow these steps.
@@ -93,3 +93,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
     ```sh
     ~/moodle-bot$ python3 moodle_bot.py --headles
     ```
+<!--
+## Contribution
+Contributions are genuinely welcomed.
+-->   
