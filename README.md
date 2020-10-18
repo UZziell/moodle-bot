@@ -17,7 +17,7 @@
 
 
 <!-- ABOUT THE PROJECT -->
-## About The Project
+## About
 
 A simple bot that automatically logs in to Moodle learning management system then attends Adobe online class.
  It uses Selenium WebDriver and schedule module. 
@@ -73,6 +73,7 @@ edit the moodle-bot.py. In schedule_me function add entries per course with foll
 
 example:
 ```schedule.every().saturday.at("08:00").do(func, at_course="زبان فا", for_duration=95)```
+
 
 For a course that has classes every other week, add the entry to `# Odd weeks` or `# Even week`
 
