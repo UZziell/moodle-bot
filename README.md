@@ -63,7 +63,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 
 \* **NOTE** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
  Despite of setting `app.update.auto` and `app.update.enabled` to `False` firefox keeps automatically updating itself.
- So search for updater and maintainer executables in firefox directory and delete them.
+ So search for `updater` and `maintainer` executables in firefox directory and **delete** them.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
