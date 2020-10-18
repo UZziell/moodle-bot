@@ -49,17 +49,25 @@ sudo apt install python3-pip
 then try to install selenium and schedule with pip again
 
 ### Installation
-
-1. Clone the repo
+#### Linux
+1. Clone the repo or download the zip file
 ```sh
 git clone https://github.com/UZziell/moodle-bot.git
 ```
-2. Copy downloaded firefox to moodle-bot directory (FF executable must be at `moodle-bot/firefox/firefox`)
+2. Extract and copy downloaded firefox to moodle-bot directory (FF executable must be at `moodle-bot/firefox/firefox`)
 3. Copy `geckodriver` file to `moodle-bot/drivers/` directory
 4. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/`
 5. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
 
-
+#### windows
+1. Clone the repo or download the zip file
+```sh
+git clone https://github.com/UZziell/moodle-bot.git
+```
+2. Install downloaded firefox to `moodle-bot/firefox` directory (FF executable must be at `moodle-bot/firefox/firefox`)
+3. Extract and copy `geckodriver.exe` file to `moodle-bot/drivers/` directory
+4. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/`
+5. rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password.
 
 <!-- USAGE EXAMPLES -->
 ## Usage
