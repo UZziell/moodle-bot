@@ -5,9 +5,9 @@ import datetime
 import logging
 import os
 import pickle
+import platform
 import re
 import threading
-import platform
 from os.path import exists
 from secrets import USERNAME, PASSWORD
 from time import sleep
@@ -24,8 +24,11 @@ from selenium.webdriver.support.ui import Select
 logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-l', '--headless', action='store_true',
-                    help="run browser in headless mode")
+parser.add_argument('-l', '--headless', action='store_true', help="run browser in headless mode")
+parser.add_argument('-u', '--username', required=False,
+                    help="Moodle username, if supplied will be replaced with USERNAME from secrets.py")
+parser.add_argument('-p', '--password', required=False,
+                    help="Moodle password, if supplied will be replaced with PASSWORD from secrets.py")
 args = parser.parse_args()
 
 # PATHS
@@ -37,6 +40,12 @@ FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver-86"
 
 HEADLESS = args.headless
+if args.username:
+    if args.password is None:
+        parser.error("--username requires --password too")
+    else:
+        USERNAME = args.username
+        PASSWORD = args.password
 
 
 def chrome_builder():
@@ -119,6 +128,10 @@ def firefox_builder():
                            0)  # apply the setting under (A) to ALL new windows (even script windows with features)
     profile.set_preference("browser.link.open_newwindow.override.external", 2)  # open external links in a new window
     profile.set_preference("browser.link.open_newwindow", 3)  # divert new window to a new tab
+    ##
+    profile.set_preference("network.http.connection-timeout", 15)
+    profile.set_preference("network.http.connection-retry-timeout", 15)
+    ##
     profile.update_preferences()
 
     opts = webdriver.firefox.options.Options()
@@ -260,6 +273,7 @@ class MoodleBot:
     def run_all_in_thread(self, course, duration):
         # self.browser =
         self.browser.implicitly_wait(2)
+        # self.browser.set_script_timeout(10)
         # self.browser.set_page_load_timeout(15)
 
         # login to moodle
@@ -295,7 +309,7 @@ def schedule_me(bot_obj):
     schedule.every().saturday.at("10:00").do(func, at_course="سيگنال")
     schedule.every().sunday.at("10:00").do(func, at_course="مدار")
     schedule.every().sunday.at("15:00").do(func, at_course="آز فيزيك")
-    schedule.every().sunday.at("19:59").do(func, at_course="ورزش", for_duration=120)
+    schedule.every().sunday.at("18:30").do(func, at_course="ورزش", for_duration=120)
     schedule.every().monday.at("13:00").do(func, at_course="شبکه")
     schedule.every().monday.at("15:00").do(func, at_course="مديريت اطلاعات")  # mis
     schedule.every().tuesday.at("10:00").do(func, at_course="مباني داده")
@@ -314,6 +328,7 @@ def schedule_me(bot_obj):
 
 if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
+    bot.i_am_present(at_course="ورزش")
     schedule_me(bot)
 
     while True:
