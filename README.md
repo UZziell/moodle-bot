@@ -80,5 +80,5 @@ For a course that has classes every other week, add the entry to `# Odd weeks` o
 * Finally run the script:
 ```sh
 ~$ cd moodle-bot
-~/moodle-bot$ python moodle_bot.py
+~/moodle-bot$ python3 moodle_bot.py
 ```
