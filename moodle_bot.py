@@ -1,5 +1,5 @@
-# I am present
-# Attends online classes using moodle lms
+# moodle bot
+# Attends online classes
 import datetime
 import logging
 import os
@@ -20,15 +20,14 @@ from selenium.webdriver.support.ui import Select
 
 from secrets import USERNAME, PASSWORD
 
-logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s",
-                    datefmt="%H:%M:%S", level=logging.INFO)
+logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
 
 # Constants
 COOKIES_PATH = "cookies/"
 PWD = os.getcwd()
 # FLASH_PATH = rf"{PWD}/drivers/libpepflashplayer.so"
-# FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
-FLASH_PATH = rf"{PWD}/drivers/libpepflashplayer-i386.so"
+FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
+# FLASH_PATH = rf"{PWD}/drivers/libpepflashplayer-i386.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver-26"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 
@@ -96,8 +95,7 @@ def chrome_builder():
     # sleep(1)
     # browser.get("chrome://prefs-internals/")
 
-    browser = webdriver.Chrome(
-        executable_path=CHROME_DRIVER_PATH, options=options)
+    browser = webdriver.Chrome(executable_path=CHROME_DRIVER_PATH, options=options)
 
     return browser
 
@@ -119,7 +117,6 @@ def firefox_builder():
                            0)  # apply the setting under (A) to ALL new windows (even script windows with features)
     profile.set_preference("browser.link.open_newwindow.override.external", 2)  # open external links in a new window
     profile.set_preference("browser.link.open_newwindow", 3)  # divert new window to a new tab
-
     profile.update_preferences()
 
     opts = webdriver.firefox.options.Options()
@@ -128,27 +125,30 @@ def firefox_builder():
     browser = webdriver.Firefox(firefox_binary=binary, options=opts, firefox_profile=profile,
                                 executable_path=FIREFOX_DRIVER_PATH)
     # firefox flash check
-    # debug flash
     browser.get("about:config")
     browser.find_element_by_xpath('//*[@id="warningButton"]').click()
     browser.find_element_by_css_selector(
         "window#config deck#configDeck vbox hbox#filterRow textbox#textbox input.textbox-input").send_keys(
         "flash" + Keys.ENTER)
     browser.save_screenshot("sc.png")
-    logging.info("Screenshot captured")
-
+    logging.info("about:config => flash settings, screenshot captured")
     sleep(1)
-    browser.get("https://isflashinstalled.com/")
-    logging.info(f"{browser.find_element_by_css_selector('body').text.split()[:4]}")
 
-    browser.get("https://www.whatismybrowser.com/detect/is-flash-installed")
-    is_flash_installed = re.search("Flash \d\d?.\d\d?.\d\d? is installed",
-                                   browser.find_element_by_xpath('//*[@id="detected_value"]').text)
+    browser.get("https://toolster.net/flash_checker")
+    elmnt = browser.find_element_by_css_selector(
+        "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
+    is_installed = re.search(r"You have installed Flash Player v.\d\d?.\d\d?.\d\d?", elmnt.text)
 
-    assert is_flash_installed, "Flash is disabled or not installed!"
-    logging.info(f"{is_flash_installed.group()}")
+    # browser.get("https://isflashinstalled.com/")
+    # logging.info(f"{browser.find_element_by_css_selector('body').text.split()[:4]}")
+    # browser.get("https://www.whatismybrowser.com/detect/is-flash-installed")
+    # is_installed = re.search("Flash \d\d?.\d\d?.\d\d? is installed",
+    #                                browser.find_element_by_xpath('//*[@id="detected_value"]').text)
 
+    assert is_installed, "Flash is disabled or not installed!"
+    logging.info(f"{is_installed.group()}")
     browser.get(f"file://{PWD}/stand-by.html")
+
     return browser
 
 
@@ -192,7 +192,7 @@ class MoodleBot:
         try:
             is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
         except:
-            logging.info("Login failed.")
+            logging.info("Login failed. Are username & password correct?")
         if is_loggedin:
             logging.info(f"LoggedIn. {is_loggedin.text}")
             executor_url = self.browser.command_executor._url
@@ -248,13 +248,17 @@ class MoodleBot:
         sleep(5)
         assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
         assert "کلاس آنلاين"
-        logging.info(f"Joined adobe online class, will be in class for '{class_length_in_minutes}' minutes")
-        sleep(class_length_in_minutes * 60)
+        logging.info(f"Joined adobe online class\n\t\
+            {self.browser.title}\n will be in class for '{class_length_in_minutes}' minutes")
+
+        # sleep(class_length_in_minutes * 60)
+        for i in range(class_length_in_minutes * 60):
+            sleep(1)
 
     def run_all_in_thread(self, course, duration):
         # self.browser =
         self.browser.implicitly_wait(2)
-
+        self.browser.set_page_load_timeout(15)
         # login to moodle
         self.moodle_login()
 
@@ -277,7 +281,6 @@ def is_even_week():
         week_number = int(now.strftime("%W"))
     else:
         week_number = int(now.strftime("%W")) - 1
-
     return week_number % 2
 
 
@@ -295,17 +298,15 @@ if __name__ == "__main__":
     schedule.every().monday.at("15:00").do(func, at_course="مديريت اطلاعات")  # mis
     schedule.every().tuesday.at("10:00").do(func, at_course="مباني داده")
     # schedule based on week's odd-even status
-    if is_even_week():
-        # Even Weeks
+    if is_even_week():  # Even Weeks
         schedule.every().saturday.at("13:00").do(func, at_course="زبان فا")
         schedule.every().saturday.at("15:00").do(func, at_course="مديريت اطلاعات")
         schedule.every().wednesday.at("10:00").do(func, at_course="شبکه")
-    else:
-        # Odd Weeks
+    else:  # Odd Weeks
         schedule.every().saturday.at("15:00").do(func, at_course="سيگنال")
         schedule.every().sunday.at("13:00").do(func, at_course="مدار")
         schedule.every().tuesday.at("15:00").do(func, at_course="مباني داده")
-    logging.info(f"All jobs added\n\t jobs:\n{schedule.jobs}")
+    logging.info(f"All jobs added\n\t jobs:\n {schedule.jobs}")
 
     while True:
         schedule.run_pending()
