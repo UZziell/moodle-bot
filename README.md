@@ -19,7 +19,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About
 
-A simple bot that automatically logs in to Moodle learning management system then attends Adobe online class.
+A simple bot that automatically logs in to Moodle learning management system then attends Adobe online classes.
  It uses Selenium WebDriver and schedule module. 
 
 <!-- GETTING STARTED -->
@@ -70,11 +70,16 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 1. Add your weekly schedule to script
 
     Well this is the ugliest part. To give the script your moodle course details(day of week and hour) you should manually
-    edit the `schedule_me()` function in `moodle-bot.py`. In `schedule_me()` function add entries per course with following format:
+    edit the `schedule_me()` function in `moodle-bot.py`. So in `schedule_me()` function add entries per course with following format:
     
-        schedule.every().DAY OF THE WEEK.at("HH:MM").do(func, at_course="COURSE NAME", for_duration=M)
+        schedule.every().DAY_OF_THE_WEEK.at("HH:MM").do(func, at_course="COURSE NAME", for_duration=Minutes)
+        
+   `DAY_OF_THE_WEEK` is the week day of the class\
+   `HH:MM` *str*  is the start time of the class\
+   `COURSE NAME` *str*  is full or partial name of the course. For example, for the course `مباني داده کاوي` you could simply set it to `داده`\
+   `Minutes` *int*   is how long you want to be online in that class session of the course
     
-    example:
+    example:\
         ```schedule.every().saturday.at("08:00").do(func, at_course="زبان فا", for_duration=95)```
     
     For a course that has classes every other week, add the entry to `# Odd weeks` or `# Even week`
