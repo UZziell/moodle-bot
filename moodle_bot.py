@@ -1,5 +1,7 @@
 # moodle bot
-# Attends online classes
+# A simple bot that automatically logs in to Moodle learning management system then attends Adobe online classes.
+# It uses Selenium WebDriver and schedule module.
+
 import argparse
 import datetime
 import logging
@@ -7,9 +9,8 @@ import os
 import pickle
 import platform
 import re
-import threading
+# import threading
 from os.path import exists
-from secrets import USERNAME, PASSWORD
 from time import sleep
 
 import schedule
@@ -21,15 +22,7 @@ from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.support.ui import Select
 
-logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
-
-parser = argparse.ArgumentParser()
-parser.add_argument('-l', '--headless', action='store_true', help="run browser in headless mode")
-parser.add_argument('-u', '--username', required=False,
-                    help="Moodle username, if supplied will be replaced with USERNAME from secrets.py")
-parser.add_argument('-p', '--password', required=False,
-                    help="Moodle password, if supplied will be replaced with PASSWORD from secrets.py")
-args = parser.parse_args()
+from secrets import USERNAME, PASSWORD
 
 # PATHS
 COOKIES_PATH = "cookies/"
@@ -38,6 +31,18 @@ FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver-86"
+
+# setup logging
+logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
+
+# parse command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('-l', '--headless', action='store_true', help="run browser in headless mode")
+parser.add_argument('-u', '--username', required=False,
+                    help="Moodle username, if supplied will be replaced with USERNAME from secrets.py")
+parser.add_argument('-p', '--password', required=False,
+                    help="Moodle password, if supplied will be replaced with PASSWORD from secrets.py")
+args = parser.parse_args()
 
 HEADLESS = args.headless
 if args.username:
@@ -220,10 +225,12 @@ class MoodleBot:
 
     def load_course(self, course):
         course = course.replace("ی", "ي")
+        course = course.replace("ک", "ك")
         # browser.find_element_by_xpath('/html/body/div[1]/nav/ul[2]/li[2]/div/div/div/div/div/div/a[2]').click()
         # browser.find_element_by_partial_link_text("مشاهده موارد بیشتر").click()
         try:
             self.browser.find_element_by_partial_link_text(course).click()
+            sleep(2)
         except common.exceptions.NoSuchElementException:
             logging.exception(f"Could not find the course. Are you sure the course '{course}' exists?")
         assert course in self.browser.title, "Did not load course successfully"
@@ -263,12 +270,29 @@ class MoodleBot:
         sleep(5)
         assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
         assert "کلاس آنلاين"
-        logging.info(f"Joined adobe online class\n\t\
-            {self.browser.title}\n will be in class for '{class_length_in_minutes}' minutes")
+        logging.info(f"Joined adobe online class '{self.browser.title}'"
+                     f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
 
         # sleep(class_length_in_minutes * 60)
         for i in range(class_length_in_minutes * 60):
             sleep(1)
+        logging.info("Class finished, loading standby...")
+
+    def load_standby(self):
+
+        windows = self.browser.window_handles
+        for win in windows[1:]:
+            self.browser.switch_to.window(win)
+            self.browser.close()
+        self.browser.switch_to.window(windows[0])
+        self.browser.get(f"file://{PWD}/stand-by.html")
+
+        # find next class
+        dates = [job.next_run for job in schedule.jobs]
+        nearest_job = sorted(dates)[1]
+        for job in sorted(schedule.jobs):
+            if nearest_job == job.next_run:
+                logging.info(f"Next class is {job}, will stay standby till then.")
 
     def run_all_in_thread(self, course, duration):
         # self.browser =
@@ -284,12 +308,14 @@ class MoodleBot:
 
         # Join online class and wait 'duration' minutes then quit
         self.join_adobe_class(class_length_in_minutes=duration)
-        self.browser.quit()
+        self.load_standby()
+        # self.browser.quit()
 
     def i_am_present(self, at_course, for_duration=90):
-        thread = threading.Thread(target=self.run_all_in_thread, args=(at_course, for_duration))
-        thread.start()
-        return thread
+        # thread = threading.Thread(target=self.run_all_in_thread, args=(at_course, for_duration))
+        # thread.start()
+        # return thread
+        self.run_all_in_thread(at_course, for_duration)
 
 
 def is_even_week():
@@ -303,6 +329,9 @@ def is_even_week():
 
 def schedule_me(bot_obj):
     func = bot_obj.i_am_present
+
+    schedule.every().monday.at("12:19").do(func, at_course="آز فیزیک", for_duration=1)
+    schedule.every().monday.at("12:21").do(func, at_course="شبکه", for_duration=1)
 
     # fixed jobs
     schedule.every().saturday.at("08:00").do(func, at_course="زبان فا")
@@ -328,7 +357,7 @@ def schedule_me(bot_obj):
 
 if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
-    bot.i_am_present(at_course="ورزش")
+    # bot.i_am_present(at_course="ورزش")
     schedule_me(bot)
 
     while True:
