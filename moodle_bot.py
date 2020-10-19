@@ -330,9 +330,6 @@ def is_even_week():
 def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
-    schedule.every().monday.at("12:19").do(func, at_course="آز فیزیک", for_duration=1)
-    schedule.every().monday.at("12:21").do(func, at_course="شبکه", for_duration=1)
-
     # fixed jobs
     schedule.every().saturday.at("08:00").do(func, at_course="زبان فا")
     schedule.every().saturday.at("10:00").do(func, at_course="سيگنال")
