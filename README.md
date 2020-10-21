@@ -50,7 +50,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 
 3. Extract and copy downloaded firefox to moodle-bot directory (FF executable must be at `moodle-bot/firefox/firefox`)
 4. Copy `geckodriver` file to `moodle-bot/drivers/` directory
-5. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/`
+5. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/` and rename it to `libnflashplayer.so`
 
 #### windows
 
