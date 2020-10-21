@@ -349,12 +349,11 @@ def schedule_me(bot_obj):
         schedule.every().sunday.at("13:00").do(func, at_course="مدار")
         schedule.every().tuesday.at("15:00").do(func, at_course="مباني داده")
 
-    logging.info(f"All jobs added\n\t jobs:\n {schedule.jobs}")
+    logging.info(f"Bot: {bot_obj.moodle_username} All jobs added\n\t jobs:\n {schedule.jobs}")
 
 
 if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
-    # bot.i_am_present(at_course="ورزش")
     schedule_me(bot)
 
     while True:
