@@ -88,25 +88,13 @@ def chrome_builder():
         # "profile.content_settings.exceptions.plugins.*,*.setting": 1,
         # "profile.default_content_setting_values.flash_data": 1,
         # "profile.default_content_setting_values.flash-data": 1,
-
-        # # r"profile.content_settings.exceptions.flash_data.'https://aminidccom:443,*'.expiration": "0",
-        # # r"profile.content_settings.exceptions.flash_data.https://aminidc.com:443,*.last_modified": "13246572488176725",
-        # "profile.content_settings.exceptions.flash_data.[https://aminidc.com]:443,*.model": 0,
-        # "profile.content_settings.exceptions.flash_data.[https://aminidc.com:443],*.setting.flashPreviouslyChanged": True,
-
-        # "profile.content_settings.exceptions.flash-data.*,*.model": 0,
-        # "profile.content_settings.exceptions.flash-data.*,*.setting.flashPreviouslyChanged": "true",
         # "DefaultPluginsSetting" : 1,
         # "PluginsAllowedForUrls": "https://www.whatismybrowser.com/detect/is-flash-installed"
     }
 
     options.add_experimental_option("prefs", prefs)
 
-    # Chrome SETUP
-    # browser = webdriver.Chrome(
-    #     executable_path=r'./drivers/chromedriver-86', options=options)
-
-    # Chrome flash check
+    # Chrome flash setup and check
     # manually_add_flash_chrome(browser, "https://ac.aminidc.com")
     # browser.get("chrome://settings/content/flash?search=flash")
     # # browser.get("chrome://version")
@@ -166,7 +154,7 @@ def firefox_builder():
     #                                browser.find_element_by_xpath('//*[@id="detected_value"]').text)
 
     assert is_installed, "Flash is disabled or not installed!"
-    logging.info(f"{is_installed.group()}")
+    logging.info(f"Check flash response: {is_installed.group()}")
     browser.get(f"file://{PWD}/stand-by.html")
 
     return browser
@@ -331,30 +319,44 @@ def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
     # fixed jobs
-    schedule.every().saturday.at("08:00").do(func, at_course="زبان فا")
-    schedule.every().saturday.at("10:00").do(func, at_course="سيگنال")
-    schedule.every().sunday.at("10:00").do(func, at_course="مدار")
-    schedule.every().sunday.at("15:00").do(func, at_course="آز فيزيك")
-    schedule.every().sunday.at("18:30").do(func, at_course="ورزش", for_duration=120)
-    schedule.every().monday.at("13:00").do(func, at_course="شبکه")
-    schedule.every().monday.at("15:00").do(func, at_course="مديريت اطلاعات")  # mis
-    schedule.every().tuesday.at("10:00").do(func, at_course="مباني داده")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="زبان فا")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="سيگنال")
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("10:00").do(func, at_course="مدار")
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="آز فيزيك")
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("18:30").do(func, at_course="ورزش", for_duration=120)
+    schedule.every().tag(bot_obj.moodle_username).monday.at("13:00").do(func, at_course="شبکه")
+    schedule.every().tag(bot_obj.moodle_username).monday.at("15:00").do(func, at_course="مديريت اطلاعات")  # mis
+    schedule.every().tag(bot_obj.moodle_username).tuesday.at("10:00").do(func, at_course="مباني داده")
     # schedule based on week's odd-even status
     if is_even_week():  # Even Weeks
-        schedule.every().saturday.at("13:00").do(func, at_course="زبان فا")
-        schedule.every().saturday.at("15:00").do(func, at_course="مديريت اطلاعات")
-        schedule.every().wednesday.at("10:00").do(func, at_course="شبکه")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("13:00").do(func, at_course="زبان فا")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="مديريت اطلاعات")
+        schedule.every().tag(bot_obj.moodle_username).wednesday.at("10:00").do(func, at_course="شبکه")
     else:  # Odd Weeks
-        schedule.every().saturday.at("15:00").do(func, at_course="سيگنال")
-        schedule.every().sunday.at("13:00").do(func, at_course="مدار")
-        schedule.every().tuesday.at("15:00").do(func, at_course="مباني داده")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="سيگنال")
+        schedule.every().tag(bot_obj.moodle_username).sunday.at("13:00").do(func, at_course="مدار")
+        schedule.every().tag(bot_obj.moodle_username).tuesday.at("15:00").do(func, at_course="مباني داده")
 
-    logging.info(f"Bot: {bot_obj.moodle_username} All jobs added\n\t jobs:\n {schedule.jobs}")
+    logging.info(f"Bot: {bot_obj.moodle_username} All jobs added")
 
 
 if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
     schedule_me(bot)
+
+    #bot2 = MoodleBot(moodle_username="ik9661270XX", moodle_password="Woohaha")
+    #schedule_me(bot2)
+
+    # print jobs
+    jobs = schedule.jobs
+    bots = {list(job.tags)[0] for job in jobs}
+    for bot in bots:
+        print(f"\tbot: {bot}\n\t\tjobs:")
+        datetimes = [job.next_run for job in jobs if bot in job.tags]
+        for time in sorted(datetimes):
+            for job in jobs:
+                if time == job.next_run and bot in job.tags:
+                    print(f"\t\t\t{job}")
 
     while True:
         schedule.run_pending()
