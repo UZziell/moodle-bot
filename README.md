@@ -77,7 +77,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
         
    `DAY_OF_THE_WEEK` is the week day of the class {`saturday`, `sunday`, `monday`, `tuesday`, `wednesday`, `thursday` and maybe even`friday`}\
         Keep in mind that this is the name of the method and not a string, so doesn't need quotations.\
-   `HH:MM` *str*  is the start time of the class\`
+   `HH:MM` *str*  is the start time of the class\
    `COURSE NAME` *str*  is full or partial name of the course. For example, for the course `مباني داده کاوي` you could simply set it to `داده`\
    `Minutes` *int*   is how long the bot will be online in the class
     
