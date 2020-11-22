@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # moodle bot
 # A simple bot that automatically logs in to Moodle learning management system then attends Adobe online classes.
 # It uses Selenium WebDriver and schedule module.
