@@ -86,10 +86,10 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
     
     For a course that has classes every other week, add the entry to `# Odd weeks` or `# Even week`
 
-3. Finally run the script:
+3. Finally run the script (don't forget the --url MOODLE_LOGIN_URL command line argument):
     ```sh
     ~$ cd moodle-bot
-    ~/moodle-bot$ python3 moodle_bot.py
+    ~/moodle-bot$ python3 moodle_bot.py --url MOODLE_LOGIN_URL
     ```
     optionally you can pass -l or --headless command line argument to start browser in headless mode
     ```sh
