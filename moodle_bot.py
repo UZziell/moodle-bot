@@ -32,7 +32,7 @@ PWD = os.getcwd()
 FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
-CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver-86"
+CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
 # setup logging
 logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
@@ -44,9 +44,12 @@ parser.add_argument('-u', '--username', required=False,
                     help="Moodle username, if supplied will be replaced with USERNAME from secrets.py")
 parser.add_argument('-p', '--password', required=False,
                     help="Moodle password, if supplied will be replaced with PASSWORD from secrets.py")
+parser.add_argument('-r', '--url', required=True, help="Moodle login-page url")
+
 args = parser.parse_args()
 
 HEADLESS = args.headless
+LOGIN_URL = args.url
 if args.username:
     if args.password is None:
         parser.error("--username requires --password too")
@@ -66,9 +69,9 @@ def chrome_builder():
     options.add_argument("--no-sandbox")
     options.add_argument("--window-size=1480,920")
     # options.add_argument("--disable-gpu")
-    options.add_argument(f"--ppapi-flash-path={FLASH_PATH}")
-    options.add_argument("--ppapi-flash-version=32.0.0.433")
-    options.add_argument("--remote-debugging-port=9222")
+    # options.add_argument(f"--ppapi-flash-path={FLASH_PATH}")
+    # options.add_argument("--ppapi-flash-version=32.0.0.433")
+    # options.add_argument("--remote-debugging-port=9222")
     # options.add_argument("user-data-dir=./Profile")
     # options.add_argument("--headless")
     options.headless = HEADLESS
@@ -79,7 +82,7 @@ def chrome_builder():
         "profile.content_settings.exceptions.plugins.*,*.per_resource.adobe-flash-player": 1,
         "profile.content_settings.exceptions.plugins.*,*.setting": 1,
         "profile.managed_plugins_allowed_for_urls": ["https://ac.aminidc.com", "http://lms.ikiu.ac.ir/",
-                                                     "https://www.whatismybrowser.com:443"],
+                                                     "https://www.whatismybrowser.com:443", LOGIN_URL],
         "plugins.run_all_flash_in_allow_mode": True,
         "plugins.RunAllFlashInAllowMode": True,
 
@@ -104,6 +107,7 @@ def chrome_builder():
     # browser.get("chrome://prefs-internals/")
 
     browser = webdriver.Chrome(executable_path=CHROME_DRIVER_PATH, options=options)
+    browser.get(f"file://{PWD}/stand-by.html")
 
     return browser
 
@@ -168,7 +172,7 @@ class MoodleBot:
         self.moodle_password = moodle_password
         self.browser = firefox_builder()
 
-    def moodle_login(self, login_url="http://lms.ikiu.ac.ir/"):
+    def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
         self.browser.get(login_url)
         assert "آموزش مجازی" in self.browser.page_source, "Could not properly load LMS Login page!"
@@ -325,7 +329,7 @@ def schedule_me(bot_obj):
     schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="سيگنال")
     schedule.every().tag(bot_obj.moodle_username).sunday.at("10:00").do(func, at_course="مدار")
     schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="آز فيزيك")
-    schedule.every().tag(bot_obj.moodle_username).sunday.at("18:30").do(func, at_course="ورزش", for_duration=120)
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("18:43").do(func, at_course="ورزش", for_duration=120)
     schedule.every().tag(bot_obj.moodle_username).monday.at("13:00").do(func, at_course="شبکه")
     schedule.every().tag(bot_obj.moodle_username).monday.at("15:00").do(func, at_course="مديريت اطلاعات")  # mis
     schedule.every().tag(bot_obj.moodle_username).tuesday.at("10:00").do(func, at_course="مباني داده")
@@ -346,8 +350,8 @@ if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
     schedule_me(bot)
 
-    #bot2 = MoodleBot(moodle_username="ik9661270XX", moodle_password="Woohaha")
-    #schedule_me(bot2)
+    # bot2 = MoodleBot(moodle_username="ik9661270XX", moodle_password="Woohaha")
+    # schedule_me(bot2)
 
     # print jobs
     jobs = schedule.jobs
