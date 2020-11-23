@@ -93,7 +93,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
     ```
     optionally you can pass -l or --headless command line argument to start browser in headless mode
     ```sh
-    ~/moodle-bot$ python3 moodle_bot.py --headless
+    ~/moodle-bot$ python3 moodle_bot.py --headless --url URL -u USERNAME -p PASSWORD
     ```
 <!--
 ## Contribution
