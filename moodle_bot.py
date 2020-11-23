@@ -175,7 +175,7 @@ class MoodleBot:
     def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
         self.browser.get(login_url)
-        assert "آموزش مجازی" in self.browser.page_source, "Could not properly load LMS Login page!"
+        assert "آموزش مجازی" or "Log in" in self.browser.page_source, "Could not properly load LMS Login page!"
         logging.info("Loaded LMS login page")
 
         if exists(cookie_file):
@@ -193,7 +193,7 @@ class MoodleBot:
                 self.browser.delete_all_cookies()
                 self.browser.refresh()
 
-        if "ورود" in self.browser.title:
+        if "ورود" or "log in" or "log-in" in self.browser.title.lower():
             logging.info("Trying to login with credentials...")
             username_field = self.browser.find_element_by_xpath('//*[@id="username"]')
             passwd_field = self.browser.find_element_by_xpath('//*[@id="password"]')

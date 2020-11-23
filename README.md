@@ -89,7 +89,7 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 3. Finally run the script (don't forget the --url MOODLE_LOGIN_URL command line argument):
     ```sh
     ~$ cd moodle-bot
-    ~/moodle-bot$ python3 moodle_bot.py --url MOODLE_LOGIN_URL
+    ~/moodle-bot$ python3 moodle_bot.py --url "https://sandbox.moodledemo.net/login/index.php" -u teacher -p sandbox
     ```
     optionally you can pass -l or --headless command line argument to start browser in headless mode
     ```sh
