@@ -11,6 +11,7 @@ import os
 import pickle
 import platform
 import re
+from datetime import timedelta, datetime
 # import threading
 from os.path import exists
 from time import sleep
@@ -148,16 +149,17 @@ def firefox_builder():
     logging.info("about:config => flash settings, screenshot captured")
     sleep(1)
 
-    browser.get("https://toolster.net/flash_checker")
-    elmnt = browser.find_element_by_css_selector(
-        "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
-    is_installed = re.search(r"You have installed Flash Player v.\d\d?.\d\d?.\d\d?", elmnt.text)
-
     # browser.get("https://isflashinstalled.com/")
     # logging.info(f"{browser.find_element_by_css_selector('body').text.split()[:4]}")
     # browser.get("https://www.whatismybrowser.com/detect/is-flash-installed")
     # is_installed = re.search("Flash \d\d?.\d\d?.\d\d? is installed",
     #                                browser.find_element_by_xpath('//*[@id="detected_value"]').text)
+    # browser.implicitly_wait(10)
+
+    browser.get("https://toolster.net/flash_checker")
+    elmnt = browser.find_element_by_css_selector(
+        "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
+    is_installed = re.search(r"You have installed Flash Player v.\d\d?.\d\d?.\d\d?", elmnt.text)
 
     assert is_installed, "Flash is disabled or not installed!"
     logging.info(f"Check flash response: {is_installed.group()}")
@@ -174,54 +176,64 @@ class MoodleBot:
 
     def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
-        self.browser.get(login_url)
-        assert "آموزش مجازی" or "Log in" in self.browser.page_source, "Could not properly load LMS Login page!"
-        logging.info("Loaded LMS login page")
 
-        if exists(cookie_file):
-            session = pickle.load(open(cookie_file, "rb"))
-            self.browser.delete_all_cookies()
-            for cookie in session["cookies"]:
-                self.browser.add_cookie(cookie)
-            logging.info(f"Loaded cookie from file '{cookie_file}'")
-            # browser.execute_script("window.open('about:newtab','_blank');")
+        while True:
+            self.browser.get(login_url)
+            assert "آموزش مجازی" or "Log in" in self.browser.page_source, "Could not properly load LMS Login page!"
+            logging.info("Loaded LMS login page")
+
+            if exists(cookie_file):
+                hour_ago = datetime.now() - timedelta(minutes=300)
+                file_epoch = os.path.getmtime(cookie_file)
+                file_mtime = datetime.fromtimestamp(file_epoch)
+                if file_mtime > hour_ago:  # if the file was last modified during the last hour, load it
+                    session = pickle.load(open(cookie_file, "rb"))
+                    self.browser.delete_all_cookies()
+                    for cookie in session["cookies"]:
+                        self.browser.add_cookie(cookie)
+                    logging.info(f"Loaded cookie from file '{cookie_file}'")
+                    # browser.execute_script("window.open('about:newtab','_blank');")
+                    try:
+                        self.browser.refresh()
+                    except Exception as e:
+                        logging.exception(f"Cookies are probably expired."
+                                          f"Exception details: {e}")
+                        self.browser.delete_all_cookies()
+                        self.browser.refresh()
+                else:
+                    os.remove(cookie_file)
+
+            if "ورود" or "log in" or "log-in" in self.browser.title.lower():
+                logging.info("Trying to login with credentials...")
+                username_field = self.browser.find_element_by_xpath('//*[@id="username"]')
+                passwd_field = self.browser.find_element_by_xpath('//*[@id="password"]')
+                username_field.send_keys(f"{self.moodle_username}")
+                passwd_field.send_keys(f"{self.moodle_password}")
+                self.browser.find_element_by_xpath('//*[@id="rememberusername"]').click()
+                sleep(0.5)
+                self.browser.find_element_by_xpath('//*[@id="loginbtn"]').click()
+
             try:
-                self.browser.refresh()
-            except Exception as e:
-                logging.exception(f"Cookies are probably expired."
-                                  f"Exception details: {e}")
-                self.browser.delete_all_cookies()
-                self.browser.refresh()
+                is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
+            except:
+                logging.info("Login failed. Are username & password correct?")
+                continue
 
-        if "ورود" or "log in" or "log-in" in self.browser.title.lower():
-            logging.info("Trying to login with credentials...")
-            username_field = self.browser.find_element_by_xpath('//*[@id="username"]')
-            passwd_field = self.browser.find_element_by_xpath('//*[@id="password"]')
-            username_field.send_keys(f"{self.moodle_username}")
-            passwd_field.send_keys(f"{self.moodle_password}")
-            self.browser.find_element_by_xpath('//*[@id="rememberusername"]').click()
-            sleep(0.5)
-            self.browser.find_element_by_xpath('//*[@id="loginbtn"]').click()
+            if is_loggedin:
+                break
 
-        try:
-            is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
-        except:
-            logging.info("Login failed. Are username & password correct?")
-        if is_loggedin:
-            logging.info(f"LoggedIn. {is_loggedin.text}")
-            executor_url = self.browser.command_executor._url
-            session_id = self.browser.session_id
-            session = {"session_id": session_id, "url": executor_url,
-                       "cookies": self.browser.get_cookies()}
-            # save cookie to file
-            pickle.dump(session, open(cookie_file, "wb"))
-            logging.info("Saved session to file")
+        logging.info(f"LoggedIn. {is_loggedin.text}")
+        executor_url = self.browser.command_executor._url
+        session_id = self.browser.session_id
+        session = {"session_id": session_id, "url": executor_url,
+                   "cookies": self.browser.get_cookies()}
+        # save cookie to file
+        pickle.dump(session, open(cookie_file, "wb"))
+        logging.info("Saved session to file")
 
     def load_course(self, course):
         course = course.replace("ی", "ي")
         course = course.replace("ک", "ك")
-        # browser.find_element_by_xpath('/html/body/div[1]/nav/ul[2]/li[2]/div/div/div/div/div/div/a[2]').click()
-        # browser.find_element_by_partial_link_text("مشاهده موارد بیشتر").click()
         try:
             self.browser.find_element_by_partial_link_text(course).click()
             sleep(2)
@@ -260,16 +272,37 @@ class MoodleBot:
         # ActionChains(browser).move_to_element(browser.find_element_by_partial_link_text('میز کار')).send_keys(Keys.CONTROL, Keys.RETURN).perform()
         sleep(2)
         self.switch_tab()
-        self.browser.get(adobe_class_url)
+
+        # fixing problem with adobe flash, open in browser
+        self.browser.get(adobe_class_url + "&proto=true")
         sleep(5)
         assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
         assert "کلاس آنلاين"
+
+        # Click Open in Browser and join class
+        self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
+        self.browser.switch_to.frame('html-meeting-frame')
+
         logging.info(f"Joined adobe online class '{self.browser.title}'"
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
+        sleep(20)
 
+        my_replys = set()
         # sleep(class_length_in_minutes * 60)
         for i in range(class_length_in_minutes * 60):
+            # TODO auto-reply
+            replys = []
+            chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
+            for chat in chat_history.split("\n"):
+                replys.append(chat.split(":")[1])
+
+            if (len(re.findall(".*[sS]a?la?m.*", "\n".join(replys[-10:]))) + len(re.findall(".*سلام.*", "\n".join(replys[-10:])))) > 5 and "slm" not in my_replys:
+                my_replys.add("slm")
+                self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(" slm ", Keys.RETURN)
+                logging.info("Sent 'slm'")
+
             sleep(1)
+
         logging.info("Class finished, loading standby...")
 
     def load_standby(self):
@@ -313,7 +346,7 @@ class MoodleBot:
 
 
 def is_even_week():
-    now = datetime.datetime.now()
+    now = datetime.now()
     if now.weekday() >= 5:
         week_number = int(now.strftime("%W"))
     else:
@@ -325,23 +358,24 @@ def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
     # fixed jobs
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="زبان فا")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="سيگنال")
-    schedule.every().tag(bot_obj.moodle_username).sunday.at("10:00").do(func, at_course="مدار")
-    schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="آز فيزيك")
-    schedule.every().tag(bot_obj.moodle_username).sunday.at("18:43").do(func, at_course="ورزش", for_duration=120)
-    schedule.every().tag(bot_obj.moodle_username).monday.at("13:00").do(func, at_course="شبکه")
-    schedule.every().tag(bot_obj.moodle_username).monday.at("15:00").do(func, at_course="مديريت اطلاعات")  # mis
-    schedule.every().tag(bot_obj.moodle_username).tuesday.at("10:00").do(func, at_course="مباني داده")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("13:00").do(func, at_course="شبکه")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("17:00").do(func, at_course="پایگاه")
+
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("08:00").do(func, at_course="تفسیر")
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="مبانی")
+
+    schedule.every().tag(bot_obj.moodle_username).tuesday.at("15:00").do(func, at_course="آیین")
+
     # schedule based on week's odd-even status
     if is_even_week():  # Even Weeks
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("13:00").do(func, at_course="زبان فا")
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="مديريت اطلاعات")
-        schedule.every().tag(bot_obj.moodle_username).wednesday.at("10:00").do(func, at_course="شبکه")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="مبانی")
+        schedule.every().tag(bot_obj.moodle_username).sunday.at("13:00").do(func, at_course="ریاضی")
+        schedule.every().tag(bot_obj.moodle_username).monday.at("08:00").do(func, at_course="اینترنت")
+
     else:  # Odd Weeks
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="سيگنال")
-        schedule.every().tag(bot_obj.moodle_username).sunday.at("13:00").do(func, at_course="مدار")
-        schedule.every().tag(bot_obj.moodle_username).tuesday.at("15:00").do(func, at_course="مباني داده")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="پایگاه")
 
     logging.info(f"Bot: {bot_obj.moodle_username} All jobs added")
 
