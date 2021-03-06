@@ -156,13 +156,13 @@ def firefox_builder():
     #                                browser.find_element_by_xpath('//*[@id="detected_value"]').text)
     # browser.implicitly_wait(10)
 
-    browser.get("https://toolster.net/flash_checker")
-    elmnt = browser.find_element_by_css_selector(
-        "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
-    is_installed = re.search(r"You have installed Flash Player v.\d\d?.\d\d?.\d\d?", elmnt.text)
-
-    assert is_installed, "Flash is disabled or not installed!"
-    logging.info(f"Check flash response: {is_installed.group()}")
+    # browser.get("https://toolster.net/flash_checker")
+    # elmnt = browser.find_element_by_css_selector(
+    #     "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
+    # is_installed = re.search(r"You have installed Flash Player v.\d\d?.\d\d?.\d\d?", elmnt.text)
+    #
+    # assert is_installed, "Flash is disabled or not installed!"
+    # logging.info(f"Check flash response: {is_installed.group()}")
     browser.get(f"file://{PWD}/stand-by.html")
 
     return browser
@@ -258,6 +258,7 @@ class MoodleBot:
                 self.browser.switch_to.window(windows[0])
 
     def join_adobe_class(self, class_length_in_minutes=90):
+
         join_class = self.browser.find_element_by_xpath(
             '/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
         join_class.click()
@@ -287,17 +288,18 @@ class MoodleBot:
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
         sleep(20)
 
-        my_replys = set()
+        my_replys = []
         # sleep(class_length_in_minutes * 60)
         for i in range(class_length_in_minutes * 60):
             # TODO auto-reply
             replys = []
             chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
             for chat in chat_history.split("\n"):
-                replys.append(chat.split(":")[1])
+                if chat:
+                    replys.append(chat.split(":")[1])
 
-            if (len(re.findall(".*[sS]a?la?m.*", "\n".join(replys[-10:]))) + len(re.findall(".*سلام.*", "\n".join(replys[-10:])))) > 5 and "slm" not in my_replys:
-                my_replys.add("slm")
+            if (len(re.findall(".*[sS]a?la?m.*", "\n".join(replys[-10:]))) + len(re.findall(".*سلام.*", "\n".join(replys[-10:])))) > 5 and "slm" not in my_replys[-3:]:
+                my_replys.append("slm")
                 self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(" slm ", Keys.RETURN)
                 logging.info("Sent 'slm'")
 
@@ -361,7 +363,7 @@ def schedule_me(bot_obj):
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("13:00").do(func, at_course="شبکه")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("17:00").do(func, at_course="پایگاه")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("17:02").do(func, at_course="پایگاه")
 
     schedule.every().tag(bot_obj.moodle_username).sunday.at("08:00").do(func, at_course="تفسیر")
     schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="مبانی")
@@ -384,8 +386,8 @@ if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
     schedule_me(bot)
 
-    # bot2 = MoodleBot(moodle_username="ik9661270XX", moodle_password="Woohaha")
-    # schedule_me(bot2)
+    #bot2 = MoodleBot(moodle_username="", moodle_password="")
+    #schedule_me(bot2)
 
     # print jobs
     jobs = schedule.jobs
