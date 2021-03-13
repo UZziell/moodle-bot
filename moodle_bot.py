@@ -11,19 +11,18 @@ import os
 import pickle
 import platform
 import re
-from datetime import timedelta, datetime
+from datetime import datetime
 # import threading
-from os.path import exists
 from time import sleep
 
 import schedule
 from selenium import webdriver, common
+from selenium.common.exceptions import NoSuchElementException
 # from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.support.ui import Select
 
 from secrets import USERNAME, PASSWORD
 
@@ -129,8 +128,8 @@ def firefox_builder():
     profile.set_preference("browser.link.open_newwindow.override.external", 2)  # open external links in a new window
     profile.set_preference("browser.link.open_newwindow", 3)  # divert new window to a new tab
     ##
-    profile.set_preference("network.http.connection-timeout", 15)
-    profile.set_preference("network.http.connection-retry-timeout", 15)
+    # profile.set_preference("network.http.connection-timeout", 15)
+    # profile.set_preference("network.http.connection-retry-timeout", 15)
     ##
     profile.update_preferences()
 
@@ -182,28 +181,29 @@ class MoodleBot:
             assert "آموزش مجازی" or "Log in" in self.browser.page_source, "Could not properly load LMS Login page!"
             logging.info("Loaded LMS login page")
 
-            if exists(cookie_file):
-                hour_ago = datetime.now() - timedelta(minutes=300)
-                file_epoch = os.path.getmtime(cookie_file)
-                file_mtime = datetime.fromtimestamp(file_epoch)
-                if file_mtime > hour_ago:  # if the file was last modified during the last hour, load it
-                    session = pickle.load(open(cookie_file, "rb"))
-                    self.browser.delete_all_cookies()
-                    for cookie in session["cookies"]:
-                        self.browser.add_cookie(cookie)
-                    logging.info(f"Loaded cookie from file '{cookie_file}'")
-                    # browser.execute_script("window.open('about:newtab','_blank');")
-                    try:
-                        self.browser.refresh()
-                    except Exception as e:
-                        logging.exception(f"Cookies are probably expired."
-                                          f"Exception details: {e}")
-                        self.browser.delete_all_cookies()
-                        self.browser.refresh()
-                else:
-                    os.remove(cookie_file)
+            # if exists(cookie_file):
+            #     hour_ago = datetime.now() - timedelta(minutes=300)
+            #     file_epoch = os.path.getmtime(cookie_file)
+            #     file_mtime = datetime.fromtimestamp(file_epoch)
+            #     if file_mtime > hour_ago:  # if the file was last modified during the last hour, load it
+            #         session = pickle.load(open(cookie_file, "rb"))
+            #         self.browser.delete_all_cookies()
+            #         for cookie in session["cookies"]:
+            #             self.browser.add_cookie(cookie)
+            #         logging.info(f"Loaded cookie from file '{cookie_file}'")
+            #         # browser.execute_script("window.open('about:newtab','_blank');")
+            #         try:
+            #             self.browser.refresh()
+            #         except Exception as e:
+            #             logging.exception(f"Cookies are probably expired."
+            #                               f"Exception details: {e}")
+            #             self.browser.delete_all_cookies()
+            #             self.browser.refresh()
+            #     else:
+            #         os.remove(cookie_file)
 
-            if "ورود" or "log in" or "log-in" in self.browser.title.lower():
+            title = self.browser.title.lower()
+            if "ورود" in title or "log in" in title or "log-in" in title:
                 logging.info("Trying to login with credentials...")
                 username_field = self.browser.find_element_by_xpath('//*[@id="username"]')
                 passwd_field = self.browser.find_element_by_xpath('//*[@id="password"]')
@@ -265,8 +265,15 @@ class MoodleBot:
 
         # copy adobe class url and reopen it in a new tab
         self.switch_tab()
-        sleep(5)
-        adobe_class_url: property = self.browser.current_url
+        links = set()
+        for i in range(0, 60):
+            sleep(0.2)
+            links.add(self.browser.current_url)
+        for link in links:
+            if "session" in link:
+                adobe_class_url = link
+
+        # adobe_class_url: property = self.browser.current_url
         self.browser.close()
         self.switch_tab()
         self.browser.find_element_by_partial_link_text('میز کار').send_keys(Keys.CONTROL, Keys.RETURN)
@@ -277,31 +284,57 @@ class MoodleBot:
         # fixing problem with adobe flash, open in browser
         self.browser.get(adobe_class_url + "&proto=true")
         sleep(5)
-        assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
-        assert "کلاس آنلاين"
+        # assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
+        # assert "کلاس آنلاين"
 
         # Click Open in Browser and join class
         self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
-        self.browser.switch_to.frame('html-meeting-frame')
-
         logging.info(f"Joined adobe online class '{self.browser.title}'"
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
         sleep(20)
 
+        self.browser.switch_to.frame('html-meeting-frame')
         my_replys = []
-        # sleep(class_length_in_minutes * 60)
+        last_chat_len = 0
+
+        def send_message(msg):
+            my_replys.append(msg)
+            self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(f" {msg} ", Keys.RETURN)
+            logging.info(f"Sent '{msg}'")
+
+        def count_repeat(pattern, text):
+            logging.info(f"{pattern} in {text} count: {len(re.findall(pattern, text))}")
+            return len(re.findall(pattern, text))
+
         for i in range(class_length_in_minutes * 60):
             # TODO auto-reply
             replys = []
-            chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
-            for chat in chat_history.split("\n"):
-                if chat:
-                    replys.append(chat.split(":")[1])
+            try:
+                chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
+            except NoSuchElementException as e:
+                logging.exception("could not find chat_history element", e)
+                continue
+            if len(chat_history) > last_chat_len:  # if there were new messages
+                last_chat_len = len(chat_history)
+                for chat in chat_history.split("\n"):
+                    if chat:
+                        replys.append(chat.split(":")[1])
 
-            if (len(re.findall(".*[sS]a?la?m.*", "\n".join(replys[-10:]))) + len(re.findall(".*سلام.*", "\n".join(replys[-10:])))) > 5 and "slm" not in my_replys[-3:]:
-                my_replys.append("slm")
-                self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(" slm ", Keys.RETURN)
-                logging.info("Sent 'slm'")
+                last_10_reply = "\n".join(replys[-10:])
+                # slm
+                if (count_repeat(".*[sS]a?la?m.*", last_10_reply) + count_repeat(".*سلام.*", last_10_reply)) > 5 \
+                        and "slm" not in my_replys[-3:]:
+                    send_message("slm")
+                # bale
+                elif (count_repeat(".*[bB]a?le.*", last_10_reply) + count_repeat(".*بله.*", last_10_reply)) > 5 \
+                        and "bale" not in my_replys[-3:]:
+                    send_message("bale")
+
+                # khaste nabashid
+                elif (count_repeat(".*[kK]ha?steh?.*", last_10_reply) + count_repeat(".*خسته.*", last_10_reply)) > 4 \
+                        and "خسته نباشید." not in my_replys[-3:]:
+                    send_message("خسته نباشید.")
+                    break  # exit class
 
             sleep(1)
 
@@ -359,6 +392,10 @@ def is_even_week():
 def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:43").do(func, at_course="تفسیر", for_duration=1)
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:46").do(func, at_course="ریاضی", for_duration=1)
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:49").do(func, at_course="شبکه", for_duration=2)
+
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت")
@@ -386,11 +423,11 @@ if __name__ == "__main__":
     bot = MoodleBot(moodle_username=USERNAME, moodle_password=PASSWORD)
     schedule_me(bot)
 
-    #bot2 = MoodleBot(moodle_username="", moodle_password="")
-    #schedule_me(bot2)
+    # bot2 = MoodleBot(moodle_username="", moodle_password="")
+    # schedule_me(bot2)
 
-    # print jobs
     jobs = schedule.jobs
+
     bots = {list(job.tags)[0] for job in jobs}
     for bot in bots:
         print(f"\tbot: {bot}\n\t\tjobs:")
@@ -403,56 +440,3 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         sleep(1)
-
-
-def manually_add_flash_chrome(driver, web_url):
-    def expand_root_element(element):
-        return driver.execute_script("return arguments[0].shadowRoot", element)
-
-    driver.get("chrome://settings/content/siteDetails?site=" + web_url)
-    print(driver.title)
-
-    root1 = driver.find_element_by_css_selector("settings-ui")
-    shadow_root1 = expand_root_element(root1)
-
-    root2 = shadow_root1.find_element(By.ID, "container")
-
-    root3 = root2.find_element(By.ID, "main")
-    shadow_root3 = expand_root_element(root3)
-
-    root4 = shadow_root3.find_element(
-        By.CSS_SELECTOR, "settings-basic-page.cr-centered-card-container.showing-subpage")
-    # root4 = shadow_root3.find_element(By.CLASS_NAME, "showing-subpage")
-    shadow_root4 = expand_root_element(root4)
-
-    root5 = shadow_root4.find_element(By.ID, "basicPage")
-
-    # root56 = root5.find_element(By.TAG_NAME, "settings-section")
-    root56 = root5.find_element(By.CSS_SELECTOR, "settings-section.expanded")
-    # shadow_root56 = expand_root_element(root56)
-
-    root6 = root56.find_element(By.CSS_SELECTOR, "settings-privacy-page")
-    shadow_root6 = expand_root_element(root6)
-
-    # root7 = shadow_root6.find_element(By.TAG_NAME, "settings-animated-pages")
-    root7 = shadow_root6.find_element(By.ID, "pages")
-    # shadow_root7 = expand_root_element(root7)
-
-    root8 = root7.find_element(
-        By.CSS_SELECTOR, "settings-subpage.iron-selected")
-    # root8 = shadow_root7.find_element_by_xpath('//*[@id="pages"]/settings-subpage')
-    # shadow_root8 = expand_root_element(root8)
-
-    root9 = root8.find_element(By.CSS_SELECTOR, "site-details")
-    shadow_root9 = expand_root_element(root9)
-
-    root10 = shadow_root9.find_element(
-        By.CSS_SELECTOR, "div.list-frame site-details-permission[id='plugins']")
-
-    # root10 = root910.find_element(By.ID, "plugins")
-    shadow_root10 = expand_root_element(root10)
-
-    root11 = shadow_root10.find_element(By.ID, "details")
-    root12 = root11.find_element(By.ID, "permissionItem")
-    root13 = root12.find_element(By.ID, "permission")
-    Select(root13).select_by_value("allow")
