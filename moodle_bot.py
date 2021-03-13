@@ -410,6 +410,7 @@ def is_even_week():
 def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
+    # Test - only for testing purposes
     schedule.every().tag(bot_obj.moodle_username).saturday.at(datetime.now().strftime("%H:") + str(int(datetime.now().strftime("%M")) + 1)).do(func, at_course="تفسیر")
 
     # fixed jobs
