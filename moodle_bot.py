@@ -18,7 +18,7 @@ from time import sleep
 
 import schedule
 from selenium import webdriver, common
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
 # from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -328,6 +328,8 @@ class MoodleBot:
                 chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
             except NoSuchElementException as e:
                 logging.exception("could not find chat_history element", e)
+            except WebDriverException as e:
+                logging.exception(f"WebDriverException: {e}\ncontinuing...")
                 continue
             if len(chat_history) > last_chat_len and AUTOREPLY:  # if there were new messages
                 last_chat_len = len(chat_history)
