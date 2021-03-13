@@ -328,11 +328,12 @@ class MoodleBot:
             try:
                 chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
             except NoSuchElementException as e:
-                logging.exception("could not find chat_history element", e)
-            except WebDriverException as e:
-                logging.exception(f"WebDriverException: {e}\ncontinuing...")
+                logging.exception("Could not find chatContentAreaContainer element")
                 continue
-            if len(chat_history) > last_chat_len and AUTOREPLY:  # if there were new messages
+            except WebDriverException as e:
+                logging.exception(f"WebDriverException\tcontinuing...")
+                continue
+            if AUTOREPLY and len(chat_history) > last_chat_len:  # if there were new messages
                 last_chat_len = len(chat_history)
                 for chat in chat_history.split("\n"):
                     if chat:
