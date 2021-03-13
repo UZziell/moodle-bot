@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-# moodle bot
-# A simple bot that automatically logs in to Moodle learning management system then attends Adobe online classes.
-# It uses Selenium WebDriver and schedule module.
+""" moodle bot
+A simple bot that automatically logs in to Moodle learning management system and attends Adobe online classes.
+It uses Selenium WebDriver and schedule module.
+"""
+
 
 import argparse
 import datetime
@@ -24,7 +26,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
-from secrets import USERNAME, PASSWORD
+# from secrets import USERNAME, PASSWORD
 
 # PATHS
 COOKIES_PATH = "cookies/"
@@ -34,21 +36,28 @@ FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
-# setup logging
-logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
-
 # parse command line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument('-l', '--headless', action='store_true', help="run browser in headless mode")
-parser.add_argument('-u', '--username', required=False,
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('-u', '--username', required=True,
                     help="Moodle username, if supplied will be replaced with USERNAME from secrets.py")
-parser.add_argument('-p', '--password', required=False,
+parser.add_argument('-p', '--password', required=True,
                     help="Moodle password, if supplied will be replaced with PASSWORD from secrets.py")
 parser.add_argument('-r', '--url', required=True, help="Moodle login-page url")
+parser.add_argument('-s', '--headless', '--silent', action='store_true', help="run browser in headless mode")
+parser.add_argument('--debug', action='store_true', help="enable debugging")
+parser.add_argument('--no-autoreply', action='store_true', help="disable auto-reply")
 
 args = parser.parse_args()
 
+# setup logging
+log_level = logging.INFO
+if args.debug:
+    log_level = logging.DEBUG
+logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=log_level)
+# Options
+AUTOREPLY = not args.no_autoreply
 HEADLESS = args.headless
+# User/pass + URL
 LOGIN_URL = args.url
 if args.username:
     if args.password is None:
@@ -139,14 +148,14 @@ def firefox_builder():
     browser = webdriver.Firefox(firefox_binary=binary, options=opts, firefox_profile=profile,
                                 executable_path=FIREFOX_DRIVER_PATH)
     # firefox flash check
-    browser.get("about:config")
-    browser.find_element_by_xpath('//*[@id="warningButton"]').click()
-    browser.find_element_by_css_selector(
-        "window#config deck#configDeck vbox hbox#filterRow textbox#textbox input.textbox-input").send_keys(
-        "flash" + Keys.ENTER)
-    browser.save_screenshot("sc.png")
-    logging.info("about:config => flash settings, screenshot captured")
-    sleep(1)
+    # browser.get("about:config")
+    # browser.find_element_by_xpath('//*[@id="warningButton"]').click()
+    # browser.find_element_by_css_selector(
+    #     "window#config deck#configDeck vbox hbox#filterRow textbox#textbox input.textbox-input").send_keys(
+    #     "flash" + Keys.ENTER)
+    # browser.save_screenshot("sc.png")
+    # logging.info("about:config => flash settings, screenshot captured")
+    # sleep(1)
 
     # browser.get("https://isflashinstalled.com/")
     # logging.info(f"{browser.find_element_by_css_selector('body').text.split()[:4]}")
@@ -154,7 +163,6 @@ def firefox_builder():
     # is_installed = re.search("Flash \d\d?.\d\d?.\d\d? is installed",
     #                                browser.find_element_by_xpath('//*[@id="detected_value"]').text)
     # browser.implicitly_wait(10)
-
     # browser.get("https://toolster.net/flash_checker")
     # elmnt = browser.find_element_by_css_selector(
     #     "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
@@ -180,6 +188,7 @@ class MoodleBot:
             self.browser.get(login_url)
             assert "آموزش مجازی" or "Log in" in self.browser.page_source, "Could not properly load LMS Login page!"
             logging.info("Loaded LMS login page")
+            logging.debug(f"current URL: {self.browser.current_url}\tpage title: {self.browser.title}")
 
             # if exists(cookie_file):
             #     hour_ago = datetime.now() - timedelta(minutes=300)
@@ -217,6 +226,7 @@ class MoodleBot:
                 is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
             except:
                 logging.info("Login failed. Are username & password correct?")
+                logging.debug(f"login with {self.moodle_username}/{self.moodle_password} failed. Trying again...")
                 continue
 
             if is_loggedin:
@@ -303,7 +313,7 @@ class MoodleBot:
             logging.info(f"Sent '{msg}'")
 
         def count_repeat(pattern, text):
-            logging.info(f"{pattern} in {text} count: {len(re.findall(pattern, text))}")
+            logging.debug(f"{pattern} in {text} count: {len(re.findall(pattern, text))}")
             return len(re.findall(pattern, text))
 
         for i in range(class_length_in_minutes * 60):
@@ -314,7 +324,7 @@ class MoodleBot:
             except NoSuchElementException as e:
                 logging.exception("could not find chat_history element", e)
                 continue
-            if len(chat_history) > last_chat_len:  # if there were new messages
+            if len(chat_history) > last_chat_len and AUTOREPLY:  # if there were new messages
                 last_chat_len = len(chat_history)
                 for chat in chat_history.split("\n"):
                     if chat:
@@ -398,11 +408,13 @@ def is_even_week():
 def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
+    schedule.every().tag(bot_obj.moodle_username).saturday.at(datetime.now().strftime("%H:") + str(int(datetime.now().strftime("%M")) + 1)).do(func, at_course="تفسیر")
+
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("13:00").do(func, at_course="شبکه")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("17:02").do(func, at_course="پایگاه")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("17:00").do(func, at_course="پایگاه")
 
     schedule.every().tag(bot_obj.moodle_username).sunday.at("08:00").do(func, at_course="تفسیر")
     schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="مبانی")
@@ -412,7 +424,7 @@ def schedule_me(bot_obj):
     # schedule based on week's odd-even status
     if is_even_week():  # Even Weeks
         logging.info("This week is Even")
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:50").do(func, at_course="مبانی")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="مبانی")
         schedule.every().tag(bot_obj.moodle_username).sunday.at("13:00").do(func, at_course="ریاضی")
         schedule.every().tag(bot_obj.moodle_username).monday.at("08:00").do(func, at_course="اینترنت")
 
