@@ -5,7 +5,6 @@ A simple bot that automatically logs in to Moodle learning management system and
 It uses Selenium WebDriver and schedule module.
 """
 
-
 import argparse
 import datetime
 import logging
@@ -54,6 +53,7 @@ log_level = logging.INFO
 if args.debug:
     log_level = logging.DEBUG
 logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=log_level)
+
 # Options
 AUTOREPLY = not args.no_autoreply
 HEADLESS = args.headless
@@ -65,6 +65,10 @@ if args.username:
     else:
         USERNAME = args.username
         PASSWORD = args.password
+
+logging.info(
+    f"Initial Config:\n\t\tUsername: {USERNAME}\tPassword: {len(PASSWORD) * '*'}\tMoodleURL: {LOGIN_URL} \n\t\t"
+    f"Log leve: {log_level}\tAuto-reply: {AUTOREPLY}\tHeadless: {HEADLESS}")
 
 
 def chrome_builder():
@@ -411,7 +415,9 @@ def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
     # Test - only for testing purposes
-    schedule.every().tag(bot_obj.moodle_username).saturday.at(datetime.now().strftime("%H:") + str(int(datetime.now().strftime("%M"))+1).zfill(2)).do(func, at_course="تفسیر")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at(
+        datetime.now().strftime("%H:") + str(int(datetime.now().strftime("%M")) + 1).zfill(2)).do(func,
+                                                                                                  at_course="تفسیر")
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
