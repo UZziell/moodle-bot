@@ -29,13 +29,13 @@ To get a local copy up and running follow these steps.
 
 ### Prerequisites
 Download all prerequisites based on you operating system.
-* firefox (version < 69, since from 69 it does not support allowing flash player without asking.
+* firefox (any version) ~~(version < 69, since from 69 it does not support allowing flash player without asking)~~
 I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/)
 
 * geckodriver - version 0.26 recommended  [Download from github.com/mozilla](https://github.com/mozilla/geckodriver/releases/tag/v0.26.0)
-* Adobe Flash Player for firefox [Download from Adobe](https://get.adobe.com/flashplayer/)
+* ~~Adobe Flash Player for firefox~~ [Download from Adobe](https://get.adobe.com/flashplayer/)
 * If python is not installed follow [Properly Installing Python](https://docs.python-guide.org/starting/installation/).
-* python selenium module and schedule module
+    * python selenium module and schedule module
 
 ### Installation
 1. Clone the repo or download the zip file
@@ -50,17 +50,18 @@ I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.m
 
 3. Extract and copy downloaded firefox to moodle-bot directory (FF executable must be at `moodle-bot/firefox/firefox`)
 4. Copy `geckodriver` file to `moodle-bot/drivers/` directory
-5. Copy `lib*flashplayer.so` also to `moodle-bot/drivers/` and rename it to `libnflashplayer.so`
+5. <del>Copy `lib*flashplayer.so` also to `moodle-bot/drivers/` and rename it to `libnflashplayer.so`</del>
 
 #### windows
 
 3. Install downloaded firefox to `moodle-bot/firefox` directory (FF executable must be at `moodle-bot/firefox/firefox`)
 4. Extract and copy `geckodriver.exe` file to `moodle-bot/drivers/` directory
-5. Install Adobe flash player
+5. <del>Install Adobe flash player</del>
 
-\* **NOTE** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
+<del>\* **NOTE** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
  Despite of setting `app.update.auto` and `app.update.enabled` to `False` firefox keeps automatically updating itself.
- So search for `updater` and `maintainer` executables in firefox directory and **delete** them.
+ So search for `updater` and `maintainer` executables in firefox directory and **delete** them.<del>
+
 <!-- USAGE EXAMPLES -->
 ## Usage
 1. You can whether rename `secrets.py.example` to `secrets.py` and fill it with your moodle username and password\
