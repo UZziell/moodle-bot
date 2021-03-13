@@ -33,9 +33,9 @@ Download all prerequisites based on you operating system.
 I tested with version 68.0-64bit). [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/)
 
 * geckodriver - version 0.26 recommended  [Download from github.com/mozilla](https://github.com/mozilla/geckodriver/releases/tag/v0.26.0)
-* ~~Adobe Flash Player for firefox~~ [Download from Adobe](https://get.adobe.com/flashplayer/)
 * If python is not installed follow [Properly Installing Python](https://docs.python-guide.org/starting/installation/).
     * python selenium module and schedule module
+* ~~Adobe Flash Player for firefox~~ [Download from Adobe](https://get.adobe.com/flashplayer/)
 
 ### Installation
 1. Clone the repo or download the zip file
