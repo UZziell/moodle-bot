@@ -20,7 +20,7 @@ import schedule
 from selenium import webdriver, common
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
 # from selenium.webdriver import ActionChains
-from selenium.webdriver.common.by import By
+# from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -226,7 +226,8 @@ class MoodleBot:
                 self.browser.find_element_by_xpath('//*[@id="loginbtn"]').click()
 
             try:
-                is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
+                # is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
+                is_loggedin = self.browser.find_element_by_xpath('//*[@id="page-footer"]/div/div[2]')
             except:
                 logging.info("Login failed. Are username & password correct?")
                 logging.debug(f"login with {self.moodle_username}/{self.moodle_password} failed. Trying again...")
@@ -235,7 +236,7 @@ class MoodleBot:
             if is_loggedin:
                 break
 
-        logging.info(f"LoggedIn. {is_loggedin.text}")
+        logging.info(f"LoggedIn. LMS log: {is_loggedin.text}")
         executor_url = self.browser.command_executor._url
         session_id = self.browser.session_id
         session = {"session_id": session_id, "url": executor_url,
@@ -461,7 +462,7 @@ if __name__ == "__main__":
         for time in sorted(datetimes):
             for job in jobs:
                 if time == job.next_run and bot in job.tags:
-                    print(f"\t\t\t{job}")
+                    print(f"\t\t\t{job} {job.next_run}")
 
     while True:
         schedule.run_pending()
