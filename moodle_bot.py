@@ -33,7 +33,7 @@ COOKIES_PATH = "cookies/"
 PWD = os.getcwd()
 FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
-FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
+FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox-bin"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
 # parse command line arguments
@@ -283,6 +283,7 @@ class MoodleBot:
             if "session" in link:
                 adobe_class_url = link
 
+        logging.debug(f"Class URL: {adobe_class_url}")
         # adobe_class_url: property = self.browser.current_url
         self.browser.close()
         self.switch_tab()
@@ -313,7 +314,8 @@ class MoodleBot:
             logging.info(f"Sent '{msg}'")
 
         def count_repeat(pattern, text):
-            logging.debug(f"{pattern} in {text} count: {len(re.findall(pattern, text))}")
+            text_list = text.split("\n")
+            logging.debug(f"'{pattern}' in '{text_list}'\t\t repeated '{len(re.findall(pattern, text))}' times")
             return len(re.findall(pattern, text))
 
         for i in range(class_length_in_minutes * 60):
