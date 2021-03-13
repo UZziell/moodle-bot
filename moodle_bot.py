@@ -392,10 +392,6 @@ def is_even_week():
 def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:43").do(func, at_course="تفسیر", for_duration=1)
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:46").do(func, at_course="ریاضی", for_duration=1)
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:49").do(func, at_course="شبکه", for_duration=2)
-
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت")
