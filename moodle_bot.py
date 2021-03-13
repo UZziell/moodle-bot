@@ -310,7 +310,19 @@ class MoodleBot:
 
         self.browser.switch_to.frame('html-meeting-frame')
         my_replys = []
+        chat_history = []
         last_chat_len = 0
+
+        for i in range(0, 30):
+            try:
+                chat_history_element = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
+            except NoSuchElementException as e:
+                logging.exception("Could not find chatContentAreaContainer element")
+                continue
+            except WebDriverException as e:
+                logging.exception(f"WebDriverException\tcontinuing...")
+                continue
+            sleep(2)
 
         def send_message(msg):
             my_replys.append(msg)
@@ -325,14 +337,7 @@ class MoodleBot:
         for i in range(class_length_in_minutes * 60):
             # TODO auto-reply
             replys = []
-            try:
-                chat_history = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]').text
-            except NoSuchElementException as e:
-                logging.exception("Could not find chatContentAreaContainer element")
-                continue
-            except WebDriverException as e:
-                logging.exception(f"WebDriverException\tcontinuing...")
-                continue
+            chat_history = chat_history_element.text
             if AUTOREPLY and len(chat_history) > last_chat_len:  # if there were new messages
                 last_chat_len = len(chat_history)
                 for chat in chat_history.split("\n"):
