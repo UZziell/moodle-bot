@@ -386,7 +386,13 @@ def is_even_week():
         week_number = int(now.strftime("%W"))
     else:
         week_number = int(now.strftime("%W")) - 1
-    return week_number % 2
+
+    return not (week_number % 2)
+
+    # if week_number % 2 == 0:
+    #     return True
+    # else:
+    #     return False
 
 
 def schedule_me(bot_obj):
@@ -405,11 +411,13 @@ def schedule_me(bot_obj):
 
     # schedule based on week's odd-even status
     if is_even_week():  # Even Weeks
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="مبانی")
+        logging.info("This week is Even")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:50").do(func, at_course="مبانی")
         schedule.every().tag(bot_obj.moodle_username).sunday.at("13:00").do(func, at_course="ریاضی")
         schedule.every().tag(bot_obj.moodle_username).monday.at("08:00").do(func, at_course="اینترنت")
 
     else:  # Odd Weeks
+        logging.info("This week is Odd")
         schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="پایگاه")
 
     logging.info(f"Bot: {bot_obj.moodle_username} All jobs added")
