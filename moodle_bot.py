@@ -66,8 +66,8 @@ if args.username:
         USERNAME = args.username
         PASSWORD = args.password
 
-logging.info(f"Initial Config:\n\t\t\t\tUsername: {USERNAME}\tPassword: {len(PASSWORD) * '*'}\tMoodleURL: {LOGIN_URL}"
-             f"\n\t\t\t\tLog leve: {log_level}\tAuto-reply: {AUTOREPLY}\tHeadless: {HEADLESS}")
+logging.info(f"Current input and config:\n\t\t\t\tUsername: {USERNAME: <15}MoodleURL: {LOGIN_URL: <25}Headless: {HEADLESS}"
+             f"\n\t\t\t\tPassword: {len(PASSWORD) * '*': <15}Log leve: {log_level: <25}Auto-reply: {AUTOREPLY}")
 
 
 def chrome_builder():
