@@ -384,7 +384,7 @@ class MoodleBot:
         logging.info("Class finished.")
 
     def load_standby(self):
-        logging.info("Loading standby...")
+        logging.info("Closing other tabs and loading standby page...")
 
         windows = self.browser.window_handles
         for win in windows[1:]:
@@ -398,7 +398,7 @@ class MoodleBot:
         nearest_job = sorted(dates)[1]
         for job in sorted(schedule.jobs):
             if nearest_job == job.next_run:
-                logging.info(f"Next class is {job}, will stay standby till then.")
+                logging.info(f"Next class is {job} at {job.next_run}, will stay standby till then.")
 
     def run_all_in_thread(self, course, duration):
         # self.browser =
