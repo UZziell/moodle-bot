@@ -18,7 +18,7 @@ from time import sleep
 
 import schedule
 from selenium import webdriver, common
-from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException, InvalidSessionIdException
 # from selenium.webdriver import ActionChains
 # from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -32,7 +32,7 @@ COOKIES_PATH = "cookies/"
 PWD = os.getcwd()
 FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
-FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox-bin"
+FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
 # parse command line arguments
@@ -310,7 +310,7 @@ class MoodleBot:
 
         self.browser.switch_to.frame('html-meeting-frame')
         my_replys = []
-        chat_history = []
+        chat_history = ""
         last_chat_len = 0
 
         for i in range(0, 30):
@@ -334,10 +334,31 @@ class MoodleBot:
             logging.debug(f"'{pattern}' in '{text_list}'\t\t repeated '{len(re.findall(pattern, text))}' times")
             return len(re.findall(pattern, text))
 
-        for i in range(class_length_in_minutes * 60):
+        sleep_seconds = 5
+        const = int(60/sleep_seconds)
+
+        for i in range(class_length_in_minutes * const):
+            sleep(sleep_seconds)
+
             # TODO auto-reply
             replys = []
-            chat_history = chat_history_element.text
+            if AUTOREPLY:
+                try:
+                    chat_history = chat_history_element.text
+                except NoSuchElementException as e:
+                    logging.exception("Could not get chat history element text")
+                    continue
+                except WebDriverException as e:
+                    logging.exception(f"WebDriverException\tcontinuing...")
+                    continue
+                except InvalidSessionIdException:
+                    logging.exception(f"InvalidSessionIdException\tcontinuing...")
+                    continue
+
+                except Exception as e:
+                    logging.exception("unkwon exception\n", e)
+                    continue
+
             if AUTOREPLY and len(chat_history) > last_chat_len:  # if there were new messages
                 last_chat_len = len(chat_history)
                 for chat in chat_history.split("\n"):
@@ -360,11 +381,11 @@ class MoodleBot:
                     send_message("خسته نباشید.")
                     break  # exit class
 
-            sleep(1)
 
-        logging.info("Class finished, loading standby...")
+        logging.info("Class finished.")
 
     def load_standby(self):
+        logging.info("Loading standby...")
 
         windows = self.browser.window_handles
         for win in windows[1:]:
@@ -382,7 +403,7 @@ class MoodleBot:
 
     def run_all_in_thread(self, course, duration):
         # self.browser =
-        self.browser.implicitly_wait(2)
+        #self.browser.implicitly_wait(2)
         # self.browser.set_script_timeout(10)
         # self.browser.set_page_load_timeout(15)
 
@@ -423,9 +444,9 @@ def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
     # Test - only for testing purposes
-    schedule.every().tag(bot_obj.moodle_username).saturday.at(
+    schedule.every().tag(bot_obj.moodle_username).friday.at(
         datetime.now().strftime("%H:") + str(int(datetime.now().strftime("%M")) + 1).zfill(2)).do(func,
-                                                                                                  at_course="تفسیر")
+                                                                                                  at_course="تفسیر", for_duration=2)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
