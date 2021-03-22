@@ -12,7 +12,7 @@ import os
 import pickle
 import platform
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 # import threading
 from time import sleep
 
@@ -308,39 +308,40 @@ class MoodleBot:
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
         sleep(20)
 
+        # TODO Auto-Reply
+
         self.browser.switch_to.frame('html-meeting-frame')
         my_replys = []
         chat_history = ""
         last_chat_len = 0
 
-        for i in range(0, 30):
-            try:
-                chat_history_element = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
-            except NoSuchElementException as e:
-                logging.exception("Could not find chatContentAreaContainer element")
-                continue
-            except WebDriverException as e:
-                logging.exception(f"WebDriverException\tcontinuing...")
-                continue
-            sleep(2)
-
-        def send_message(msg):
-            my_replys.append(msg)
-            self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(f" {msg} ", Keys.RETURN)
-            logging.info(f"Sent '{msg}'")
+        def send_message(msg, reply_list):
+            reply_list.append(msg)
+            # self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(f" {msg} ", Keys.RETURN)
+            logging.info(f"Sent '{msg}' at {datetime.now()}")
 
         def count_repeat(pattern, text):
             text_list = text.split("\n")
             logging.debug(f"'{pattern}' in '{text_list}'\t\t repeated '{len(re.findall(pattern, text))}' times")
             return len(re.findall(pattern, text))
 
-        sleep_seconds = 5
-        const = int(60/sleep_seconds)
+        if AUTOREPLY:
+            for i in range(0, 30):
+                try:
+                    chat_history_element = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
+                except NoSuchElementException as e:
+                    logging.exception("Could not find chatContentAreaContainer element")
+                    continue
+                except WebDriverException as e:
+                    logging.exception(f"WebDriverException\tcontinuing...")
+                    continue
+                sleep(2)
 
+        sleep_seconds = 5
+        const = int(60 / sleep_seconds)
         for i in range(class_length_in_minutes * const):
             sleep(sleep_seconds)
 
-            # TODO auto-reply
             replys = []
             if AUTOREPLY:
                 try:
@@ -354,33 +355,31 @@ class MoodleBot:
                 except InvalidSessionIdException:
                     logging.exception(f"InvalidSessionIdException\tcontinuing...")
                     continue
-
                 except Exception as e:
-                    logging.exception("unkwon exception\n", e)
+                    logging.exception("unknown exception\n", e)
                     continue
 
-            if AUTOREPLY and len(chat_history) > last_chat_len:  # if there were new messages
-                last_chat_len = len(chat_history)
-                for chat in chat_history.split("\n"):
-                    if chat:
-                        replys.append(chat.split(":")[1])
+                if len(chat_history) > last_chat_len:  # if there were new messages
+                    last_chat_len = len(chat_history)
+                    for chat in chat_history.split("\n"):
+                        if chat:
+                            replys.append(chat.split(":")[1])
 
-                last_10_reply = "\n".join(replys[-10:])
-                # slm
-                if (count_repeat(".*[sS]a?la?m.*", last_10_reply) + count_repeat(".*سلام.*", last_10_reply)) > 5 \
-                        and "slm" not in my_replys[-3:]:
-                    send_message("slm")
-                # bale
-                elif (count_repeat(".*[bB]a?le.*", last_10_reply) + count_repeat(".*بله.*", last_10_reply)) > 5 \
-                        and "bale" not in my_replys[-3:]:
-                    send_message("bale")
+                    last_10_reply = "\n".join(replys[-10:])
+                    # slm
+                    if (count_repeat(".*[sS]a?la?m.*", last_10_reply) + count_repeat(".*سلام.*", last_10_reply)) > 5 \
+                            and "slm" not in my_replys[-3:]:
+                        send_message("slm", my_replys)
+                    # bale
+                    elif (count_repeat(".*[bB]a?le.*", last_10_reply) + count_repeat(".*بله.*", last_10_reply)) > 5 \
+                            and "bale" not in my_replys[-3:]:
+                        send_message("bale", my_replys)
 
-                # khaste nabashid
-                elif (count_repeat(".*[kK]ha?steh?.*", last_10_reply) + count_repeat(".*خسته.*", last_10_reply)) > 4 \
-                        and "خسته نباشید." not in my_replys[-3:]:
-                    send_message("خسته نباشید.")
-                    break  # exit class
-
+                    # khaste nabashid
+                    elif (count_repeat(".*[kK]ha?steh?.*", last_10_reply) + count_repeat(".*خسته.*", last_10_reply)) > 4 \
+                            and "خسته نباشید." not in my_replys[-3:]:
+                        send_message("خسته نباشید.", my_replys)
+                        break  # exit class
 
         logging.info("Class finished.")
 
@@ -403,7 +402,7 @@ class MoodleBot:
 
     def run_all_in_thread(self, course, duration):
         # self.browser =
-        #self.browser.implicitly_wait(2)
+        # self.browser.implicitly_wait(2)
         # self.browser.set_script_timeout(10)
         # self.browser.set_page_load_timeout(15)
 
@@ -444,9 +443,18 @@ def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
     # Test - only for testing purposes
-    schedule.every().tag(bot_obj.moodle_username).friday.at(
-        datetime.now().strftime("%H:") + str(int(datetime.now().strftime("%M")) + 1).zfill(2)).do(func,
-                                                                                                  at_course="تفسیر", for_duration=2)
+    def minute_from_now(m=1):
+        now_plus_m = datetime.now() + timedelta(minutes=m)
+        return now_plus_m.strftime("%H:%M")
+
+    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now()).do(func, at_course="تفسیر",
+                                                                                  for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now(4)).do(func, at_course="آیین",
+                                                                                   for_duration=30)
+    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now(35)).do(func, at_course="شبکه",
+                                                                                    for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now(40)).do(func, at_course="پایگاه",
+                                                                                    for_duration=2)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
