@@ -108,11 +108,15 @@ search for `updater` and `maintainer` executables in firefox directory and **del
     ```
    optionally you can pass -s or --headless command line argument to start browser in headless mode, for example:
     ```sh
-    ~/moodle-bot$ python3 moodle_bot.py --headless -u USERNAME -p PASSWORD --url URL
+    ~/moodle-bot$ python3 moodle_bot.py -u USERNAME -p PASSWORD --url URL --headless
     ```
    To disable auto-reply use --no-autoreply:
     ```sh
-    ~/moodle-bot$ python3 moodle_bot.py -u USERNAME -p PASSWORD --no-autoreply --url URL
+    ~/moodle-bot$ python3 moodle_bot.py -u USERNAME -p PASSWORD --url URL --no-autoreply
+    ```
+   Example of headless and no-autoreply:
+    ```sh
+    ~/moodle-bot$ python3 moodle_bot.py -u USERNAME -p PASSWORD --url URL --headless --no-autoreply
     ```
 <!--
 ## Contribution
