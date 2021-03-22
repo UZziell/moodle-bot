@@ -31,7 +31,7 @@ To get a local copy up and running follow these steps.
 
 Download all prerequisites based on you operating system.
 
-* firefox (any version) ~~(version < 69, since from 69 it does not support allowing flash player without asking)
+* firefox (version 72.0.2 recommended) ~~(version < 69, since from 69 it does not support allowing flash player without asking)
   tested with version 68.0-64bit)~~ [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/)
 
 * geckodriver - version 0.26
@@ -56,7 +56,8 @@ Download all prerequisites based on you operating system.
 3. Extract and copy downloaded firefox to moodle-bot directory (Firefox executable must be
    at `moodle-bot/firefox/firefox`)
 4. Copy `geckodriver` file to `moodle-bot/drivers/` directory
-5. <del>Copy `lib*flashplayer.so` also to `moodle-bot/drivers/` and rename it to `libnflashplayer.so`</del>
+5. Make sure both firefox binary(firefox/firefox) and geckodriver (drivers/geckodriver) are executable.
+6. <del>Copy `lib*flashplayer.so` also to `moodle-bot/drivers/` and rename it to `libnflashplayer.so`</del>
 
 #### windows
 
