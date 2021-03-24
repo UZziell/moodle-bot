@@ -66,7 +66,8 @@ if args.username:
         USERNAME = args.username
         PASSWORD = args.password
 
-logging.info(f"Current input and config:\n\t\t\t\tUsername: {USERNAME: <15}MoodleURL: {LOGIN_URL: <25}Headless: {HEADLESS}"
+logging.info(f"Current input and config:\
+                \n\t\t\t\tUsername: {USERNAME: <15}MoodleURL: {LOGIN_URL: <25}Headless: {HEADLESS}"
              f"\n\t\t\t\tPassword: {len(PASSWORD) * '*': <15}Log leve: {log_level: <25}Auto-reply: {AUTOREPLY}")
 
 
@@ -183,6 +184,7 @@ class MoodleBot:
         self.moodle_username = moodle_username
         self.moodle_password = moodle_password
         self.browser = firefox_builder()
+        # self.browser = chrome_builder()
 
     def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
@@ -279,13 +281,18 @@ class MoodleBot:
 
         # copy adobe class url and reopen it in a new tab
         self.switch_tab()
-        links = set()
-        for i in range(0, 60):
-            sleep(0.2)
-            links.add(self.browser.current_url)
-        for link in links:
-            if "session" in link:
-                adobe_class_url = link
+        sleep(2)
+        referrer = self.browser.execute_script('return window.document.referrer')
+        if "session" in referrer.lower():
+            adobe_class_url = referrer
+        else:
+            links = set()
+            for i in range(0, 60):
+                sleep(0.2)
+                links.add(self.browser.current_url)
+            for link in links:
+                if "session" in link.lower():
+                    adobe_class_url = link
 
         logging.debug(f"Class URL: {adobe_class_url}")
         # adobe_class_url: property = self.browser.current_url
@@ -447,14 +454,14 @@ def schedule_me(bot_obj):
         now_plus_m = datetime.now() + timedelta(minutes=m)
         return now_plus_m.strftime("%H:%M")
 
-    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now()).do(func, at_course="تفسیر",
-                                                                                  for_duration=2)
-    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now(4)).do(func, at_course="آیین",
-                                                                                   for_duration=30)
-    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now(35)).do(func, at_course="شبکه",
-                                                                                    for_duration=2)
-    schedule.every().tag(bot_obj.moodle_username).monday.at(minute_from_now(40)).do(func, at_course="پایگاه",
-                                                                                    for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now()).do(func, at_course="تفسیر",
+                                                                                     for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(4)).do(func, at_course="آیین",
+                                                                                      for_duration=30)
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(35)).do(func, at_course="شبکه",
+                                                                                       for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(40)).do(func, at_course="پایگاه",
+                                                                                       for_duration=2)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
