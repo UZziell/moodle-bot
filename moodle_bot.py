@@ -368,9 +368,9 @@ class MoodleBot:
 
                 if len(chat_history) > last_chat_len:  # if there were new messages
                     last_chat_len = len(chat_history)
-                    for chat in chat_history.split("\n"):
-                        if chat:
-                            replys.append(chat.split(":")[1])
+                    for message in chat_history.split("\n"):
+                        if ":" in message:
+                            replys.append(message.split(":")[1])
 
                     last_10_reply = "\n".join(replys[-10:])
                     # slm
@@ -461,7 +461,7 @@ def schedule_me(bot_obj):
     schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(35)).do(func, at_course="شبکه",
                                                                                        for_duration=2)
     schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(40)).do(func, at_course="پایگاه",
-                                                                                       for_duration=2)
+                                                                                      for_duration=2)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
