@@ -76,7 +76,9 @@ logging.info(f"Current input and config:\
 
 def chrome_builder():
     args_to_add = ["--disable-infobars", "--disable-password-generation", "--disable-password-manager-reauthentication",
-                   "--disable-save-password-bubble", "--disable-features=EnableEphemeralFlashPermission"]
+                   "--disable-save-password-bubble", "--disable-features=EnableEphemeralFlashPermission",
+                   "user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36",
+                   "--no-sandbox", "--window-size=1480,920"]
     options = webdriver.chrome.options.Options()
 
     for arg in args_to_add:
@@ -132,11 +134,15 @@ def firefox_builder():
     binary = FirefoxBinary(FIREFOX_BINARY_PATH)
     profile = FirefoxProfile()
 
-    if platform.system().lower() != "windows":
-        profile.set_preference("plugin.flash.path", FLASH_PATH)
-    profile.set_preference("dom.ipc.plugins.flash.disable-protected-mode", True)
-    profile.set_preference("plugins.flashBlock.enabled", False)
-    profile.set_preference("plugin.state.flash", 2)
+    # Flash settings
+    # if platform.system().lower() != "windows":
+    #     profile.set_preference("plugin.flash.path", FLASH_PATH)
+    # profile.set_preference("dom.ipc.plugins.flash.disable-protected-mode", True)
+    # profile.set_preference("plugins.flashBlock.enabled", False)
+    # profile.set_preference("plugin.state.flash", 2)
+
+    profile.set_preference("general.useragent.override",
+                           "UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0")
     profile.set_preference("app.update.auto", False)
     profile.set_preference("app.update.enabled", False)
 
