@@ -29,16 +29,20 @@ To get a local copy up and running follow these steps.
 
 ### Prerequisites
 
-Download all prerequisites based on you operating system.
+Download and install all prerequisites based on you operating system.
 
-* firefox (version 72.0.2 recommended) ~~(version < 69, since from 69 it does not support allowing flash player without asking)
-  tested with version 68.0-64bit)~~ [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/)
+* Download and install chromium (version 88.0.4324.182 tested) [From from chromium.org](https://www.chromium.org/getting-involved/download-chromium)
+  <br />**or**<br />
+   firefox (version 72.0.2 tested) [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/)
 
-* geckodriver - version 0.26
+** **NOTE** <br />
+if using linux, instead of manual installation, simply use package manager to install them (package names will probably be: chromium chromium-dirver or firefox geckodriver) ** 
+
+* If decided to go with firefox, also download geckodriver - version 0.26
   recommended  [Download from github.com/mozilla](https://github.com/mozilla/geckodriver/releases/tag/v0.26.0)
 * If python is not installed follow [Properly Installing Python](https://docs.python-guide.org/starting/installation/).
     * python selenium module and schedule module
-* ~~Adobe Flash Player for firefox~~ [Download from Adobe](https://get.adobe.com/flashplayer/)
+* ~~Adobe Flash Player for firefox~~ [~~Download from Adobe~~](https://get.adobe.com/flashplayer/)
 
 ### Installation
 
@@ -114,7 +118,7 @@ search for `updater` and `maintainer` executables in firefox directory and **del
     ```sh
     ~/moodle-bot$ python3 moodle_bot.py -u USERNAME -p PASSWORD --url URL --no-autoreply
     ```
-   Example of headless and no-autoreply:
+   Options all together:
     ```sh
     ~/moodle-bot$ python3 moodle_bot.py -u USERNAME -p PASSWORD --url URL --headless --no-autoreply
     ```
