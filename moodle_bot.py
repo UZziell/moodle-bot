@@ -183,8 +183,8 @@ class MoodleBot:
     def __init__(self, moodle_username, moodle_password):
         self.moodle_username = moodle_username
         self.moodle_password = moodle_password
-        self.browser = firefox_builder()
-        # self.browser = chrome_builder()
+        # self.browser = firefox_builder()
+        self.browser = chrome_builder()
 
     def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
@@ -293,6 +293,8 @@ class MoodleBot:
             for link in links:
                 if "session" in link.lower():
                     adobe_class_url = link
+        if not adobe_class_url:
+            logging.exception("did not find class url, exiting...")
 
         logging.debug(f"Class URL: {adobe_class_url}")
         # adobe_class_url: property = self.browser.current_url
@@ -313,7 +315,7 @@ class MoodleBot:
         self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
         logging.info(f"Joined adobe online class '{self.browser.title}'"
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
-        sleep(20)
+        sleep(25)
 
         # TODO Auto-Reply
 
@@ -332,17 +334,21 @@ class MoodleBot:
             logging.debug(f"'{pattern}' in '{text_list}'\t\t repeated '{len(re.findall(pattern, text))}' times")
             return len(re.findall(pattern, text))
 
-        if AUTOREPLY:
+        def get_chat_history_element():
             for i in range(0, 30):
+                sleep(1)
                 try:
-                    chat_history_element = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
+                    chat_history_elmnt = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
                 except NoSuchElementException as e:
                     logging.exception("Could not find chatContentAreaContainer element")
                     continue
                 except WebDriverException as e:
                     logging.exception(f"WebDriverException\tcontinuing...")
                     continue
-                sleep(2)
+
+            return chat_history_elmnt
+
+        chat_history_element = get_chat_history_element()
 
         sleep_seconds = 5
         const = int(60 / sleep_seconds)
@@ -363,7 +369,19 @@ class MoodleBot:
                     logging.exception(f"InvalidSessionIdException\tcontinuing...")
                     continue
                 except Exception as e:
-                    logging.exception("unknown exception\n", e)
+                    logging.exception("Unknown exception\nRefreshing page...", e)
+
+                    self.browser.refresh()
+                    popup = self.browser.switch_to.alert
+                    popup.accept()
+                    sleep(5)
+
+                    # Click Open in Browser and join class
+                    self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
+                    logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
+                    sleep(40)
+                    self.browser.switch_to.frame('html-meeting-frame')
+                    chat_history_element = get_chat_history_element()
                     continue
 
                 if len(chat_history) > last_chat_len:  # if there were new messages
@@ -454,36 +472,36 @@ def schedule_me(bot_obj):
         now_plus_m = datetime.now() + timedelta(minutes=m)
         return now_plus_m.strftime("%H:%M")
 
-    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now()).do(func, at_course="تفسیر",
-                                                                                     for_duration=2)
-    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(4)).do(func, at_course="آیین",
-                                                                                      for_duration=30)
-    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(35)).do(func, at_course="شبکه",
-                                                                                       for_duration=2)
-    schedule.every().tag(bot_obj.moodle_username).wednesday.at(minute_from_now(40)).do(func, at_course="پایگاه",
-                                                                                      for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now()).do(func, at_course="تفسیر",
+                                                                                  for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(4)).do(func, at_course="آیین",
+                                                                                   for_duration=30)
+    # schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(35)).do(func, at_course="شبکه",
+                                                                                    for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).saturday.at(minute_from_now(40)).do(func, at_course="پایگاه",
+    #                                                                                  for_duration=2)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("13:00").do(func, at_course="شبکه")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("17:00").do(func, at_course="پایگاه")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:09").do(func, at_course="اینترنت")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("14:00").do(func, at_course="شبکه")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("18:00").do(func, at_course="پایگاه")
 
     schedule.every().tag(bot_obj.moodle_username).sunday.at("08:00").do(func, at_course="تفسیر")
-    schedule.every().tag(bot_obj.moodle_username).sunday.at("15:00").do(func, at_course="مبانی")
+    schedule.every().tag(bot_obj.moodle_username).sunday.at("16:00").do(func, at_course="مبانی")
 
-    schedule.every().tag(bot_obj.moodle_username).tuesday.at("15:00").do(func, at_course="آیین")
+    schedule.every().tag(bot_obj.moodle_username).tuesday.at("16:00").do(func, at_course="آیین")
 
     # schedule based on week's odd-even status
     if is_even_week():  # Even Weeks
         logging.info("This week is Even")
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="مبانی")
-        schedule.every().tag(bot_obj.moodle_username).sunday.at("13:00").do(func, at_course="ریاضی")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("16:00").do(func, at_course="مبانی")
+        schedule.every().tag(bot_obj.moodle_username).sunday.at("14:00").do(func, at_course="ریاضی")
         schedule.every().tag(bot_obj.moodle_username).monday.at("08:00").do(func, at_course="اینترنت")
 
     else:  # Odd Weeks
         logging.info("This week is Odd")
-        schedule.every().tag(bot_obj.moodle_username).saturday.at("15:00").do(func, at_course="پایگاه")
+        schedule.every().tag(bot_obj.moodle_username).saturday.at("16:00").do(func, at_course="پایگاه")
 
     logging.info(f"Bot: {bot_obj.moodle_username} All jobs added")
 
