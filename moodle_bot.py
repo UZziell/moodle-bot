@@ -177,7 +177,7 @@ def firefox_builder():
     # browser.implicitly_wait(10)
     # browser.get("https://toolster.net/flash_checker")
     # elmnt = browser.find_element_by_css_selector(
-    #     "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
+    # "html body div#main div#center div#tool_padding div#flash_checker div#bottom_info div#double-version.vtor_info")
     # is_installed = re.search(r"You have installed Flash Player v.\d\d?.\d\d?.\d\d?", elmnt.text)
     #
     # assert is_installed, "Flash is disabled or not installed!"
@@ -303,8 +303,9 @@ class MoodleBot:
                 self.browser.switch_to.window(windows[0])
 
     def join_adobe_class(self, class_length_in_minutes=90):
-        join_class = self.get_element_wait_clickable(by=By.XPATH,
-                                                     element='/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
+        join_class = self.get_element_wait_clickable(
+            by=By.XPATH,
+            element='/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
         # join_class = self.browser.find_element_by_xpath(
         #     '/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
         join_class.click()
@@ -331,14 +332,15 @@ class MoodleBot:
         self.browser.close()
         self.switch_tab()
         self.browser.find_element_by_partial_link_text('میز کار').send_keys(Keys.CONTROL, Keys.RETURN)
-        # ActionChains(browser).move_to_element(browser.find_element_by_partial_link_text('میز کار')).send_keys(Keys.CONTROL, Keys.RETURN).perform()
+        # ActionChains(browser).move_to_element(browser.find_element_by_partial_link_text('میز کار')).send_keys(
+        #    Keys.CONTROL, Keys.RETURN).perform()
         sleep(2)
         self.switch_tab()
 
         # fixing problem with adobe flash, open in browser
         self.browser.get(adobe_class_url + "&proto=true")
-        ## sleep(5)
-        # assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
+        # sleep(5)
+        # assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected"
 
         # Click Open in Browser and join class
         self.get_element_wait_clickable(by=By.XPATH, element='/html/body/center/div[1]/div[3]/div[7]/button').click()
@@ -349,11 +351,11 @@ class MoodleBot:
         # ## Auto-Reply ## #
         WebDriverWait(self.browser, 80).until(
             EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
-        ## sleep(30)
+        # sleep(30)
         # self.browser.switch_to.frame(By.ID, 'html-meeting-frame')
 
         my_replys = []
-        chat_history = ""
+        # chat_history = ""
         last_chat_len = 0
 
         def send_message(msg, reply_list):
@@ -380,10 +382,10 @@ class MoodleBot:
                         break
 
                 except NoSuchElementException as e:
-                    logging.exception("Could not find chatContentAreaContainer element")
+                    logging.exception("Could not find chatContentAreaContainer element", e)
                     continue
                 except WebDriverException as e:
-                    logging.exception(f"WebDriverException\tcontinuing...")
+                    logging.exception(f"WebDriverException\tcontinuing...", e)
                     continue
 
             return chat_history_elmnt
@@ -400,13 +402,13 @@ class MoodleBot:
                 try:
                     chat_history = chat_history_element.text
                 except NoSuchElementException as e:
-                    logging.exception("Could not get chat history element text")
+                    logging.exception("Could not get chat history element text", e)
                     continue
                 except InvalidSessionIdException:
-                    logging.exception(f"InvalidSessionIdException\tcontinuing...")
+                    logging.exception(f"InvalidSessionIdException\tcontinuing...", e)
                     continue
                 except WebDriverException as e:
-                    logging.exception(f"WebDriverException\tcontinuing...")
+                    logging.exception(f"WebDriverException\tcontinuing...", e)
                     continue
                 except Exception as e:
                     logging.exception("Unknown exception\nRefreshing page...", e)
@@ -417,14 +419,14 @@ class MoodleBot:
                         popup.accept()
                     except NoAlertPresentException as e:
                         pass
-                    ## sleep(5)
+                    # sleep(5)
 
                     # Click Open in Browser and join class
                     self.get_element_wait_clickable(by=By.XPATH,
                                                     element='/html/body/center/div[1]/div[3]/div[7]/button').click()
                     # self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
                     logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
-                    ## sleep(30)
+                    # sleep(30)
                     WebDriverWait(self.browser, 80).until(
                         EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
                     # self.browser.switch_to.frame('html-meeting-frame')
@@ -448,8 +450,8 @@ class MoodleBot:
                         send_message("bale", my_replys)
 
                     # khaste nabashid
-                    elif (count_repeat(".*[kK]ha?steh?.*", last_10_reply) + count_repeat(".*خسته.*", last_10_reply)) > 4 \
-                            and "خسته نباشید." not in my_replys[-3:]:
+                    elif (count_repeat(".*[kK]ha?steh?.*", last_10_reply) +
+                          count_repeat(".*خسته.*", last_10_reply)) > 4 and "خسته نباشید." not in my_replys[-3:]:
                         send_message("خسته نباشید.", my_replys)
                         break  # exit class
 
