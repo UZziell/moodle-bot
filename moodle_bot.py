@@ -10,7 +10,6 @@ import datetime
 import logging
 import os
 import pickle
-import platform
 import re
 from datetime import datetime, timedelta
 # import threading
@@ -55,7 +54,7 @@ args = parser.parse_args()
 log_level = logging.INFO
 if args.debug:
     log_level = logging.DEBUG
-logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%H:%M:%S", level=log_level)
+logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=log_level)
 
 # Options
 AUTOREPLY = not args.no_autoreply
@@ -91,7 +90,6 @@ def chrome_builder():
     # options.add_argument("--ppapi-flash-version=32.0.0.433")
     # options.add_argument("--remote-debugging-port=9222")
     # options.add_argument("user-data-dir=./Profile")
-    # options.add_argument("--headless")
     options.headless = HEADLESS
 
     prefs = {
@@ -269,9 +267,9 @@ class MoodleBot:
                 break
 
         logging.info(f"LoggedIn. LMS log: {is_loggedin.text}")
-        executor_url = self.browser.command_executor._url
+        # executor_url = self.browser.command_executor._url
         session_id = self.browser.session_id
-        session = {"session_id": session_id, "url": executor_url,
+        session = {"session_id": session_id, "url": self.browser.current_url,
                    "cookies": self.browser.get_cookies()}
         # save cookie to file
         pickle.dump(session, open(cookie_file, "wb"))
@@ -287,8 +285,6 @@ class MoodleBot:
         except common.exceptions.NoSuchElementException:
             logging.exception(f"Could not find the course. Are you sure the course '{course}' exists?")
         assert course in self.browser.title, "Did not load course successfully"
-        # except Exception as e:
-        #     logging.error(f"Could not find course '{course}' in workspace.\n  Exception details: {e}")
 
         self.get_element_wait_presence(by=By.PARTIAL_LINK_TEXT, element='کلاس آنلاین').click()
         # self.browser.find_element_by_partial_link_text('کلاس آنلاین').click()
