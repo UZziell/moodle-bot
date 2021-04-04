@@ -18,12 +18,15 @@ from time import sleep
 
 import schedule
 from selenium import webdriver, common
-from selenium.common.exceptions import NoSuchElementException, WebDriverException, InvalidSessionIdException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException, InvalidSessionIdException, \
+    NoAlertPresentException
+from selenium.webdriver.common.by import By
 # from selenium.webdriver import ActionChains
-# from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 # from secrets import USERNAME, PASSWORD
 
@@ -59,12 +62,12 @@ AUTOREPLY = not args.no_autoreply
 HEADLESS = args.headless
 # User/pass + URL
 LOGIN_URL = args.url
-if args.username:
-    if args.password is None:
-        parser.error("--username requires --password too")
-    else:
-        USERNAME = args.username
-        PASSWORD = args.password
+# if args.username:
+#     if args.password is None:
+#         parser.error("--username requires --password too")
+#     else:
+USERNAME = args.username
+PASSWORD = args.password
 
 logging.info(f"Current input and config:\
                 \n\t\t\t\tUsername: {USERNAME: <15}MoodleURL: {LOGIN_URL: <25}Headless: {HEADLESS}"
@@ -79,8 +82,8 @@ def chrome_builder():
     for arg in args_to_add:
         options.add_argument(arg)
 
-    options.add_argument("--no-sandbox")
-    options.add_argument("--window-size=1480,920")
+    # options.binary_location = "/var/lib/snapd/snap/bin/chromium"
+
     # options.add_argument("--disable-gpu")
     # options.add_argument(f"--ppapi-flash-path={FLASH_PATH}")
     # options.add_argument("--ppapi-flash-version=32.0.0.433")
@@ -136,8 +139,9 @@ def firefox_builder():
     profile.set_preference("plugin.state.flash", 2)
     profile.set_preference("app.update.auto", False)
     profile.set_preference("app.update.enabled", False)
-    profile.set_preference("browser.link.open_newwindow.restriction",
-                           0)  # apply the setting under (A) to ALL new windows (even script windows with features)
+
+    # apply the setting under (A) to ALL new windows (even script windows with features)
+    profile.set_preference("browser.link.open_newwindow.restriction", 0)
     profile.set_preference("browser.link.open_newwindow.override.external", 2)  # open external links in a new window
     profile.set_preference("browser.link.open_newwindow", 3)  # divert new window to a new tab
     ##
@@ -185,6 +189,23 @@ class MoodleBot:
         self.moodle_password = moodle_password
         # self.browser = firefox_builder()
         self.browser = chrome_builder()
+        logging.info(f"UserAgent: {self.browser.execute_script('return navigator.userAgent')}")
+
+    def get_element_wait_presence(self, by, element, wait=40):
+        try:
+            element = WebDriverWait(self.browser, wait).until(EC.presence_of_element_located((by, element)))
+            return element
+        except (NoSuchElementException, WebDriverException) as e:
+            logging.exception(f"Could not find element '{element}' by '{by}' on page {self.browser.current_url}")
+            logging.exception(e, e.args)
+
+    def get_element_wait_clickable(self, by, element, wait=40):
+        try:
+            element = WebDriverWait(self.browser, wait).until(EC.element_to_be_clickable((by, element)))
+            return element
+        except (NoSuchElementException, WebDriverException) as e:
+            logging.exception(f"Could not find element '{element}' by '{by}' on page {self.browser.current_url}")
+            logging.exception(e, e.args)
 
     def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
@@ -219,20 +240,23 @@ class MoodleBot:
             title = self.browser.title.lower()
             if "ورود" in title or "log in" in title or "log-in" in title:
                 logging.info("Trying to login with credentials...")
-                username_field = self.browser.find_element_by_xpath('//*[@id="username"]')
-                passwd_field = self.browser.find_element_by_xpath('//*[@id="password"]')
+                username_field = self.get_element_wait_presence(by=By.XPATH, element='//*[@id="username"]')
+                passwd_field = self.get_element_wait_presence(by=By.XPATH, element='//*[@id="password"]')
                 username_field.send_keys(f"{self.moodle_username}")
                 passwd_field.send_keys(f"{self.moodle_password}")
-                self.browser.find_element_by_xpath('//*[@id="rememberusername"]').click()
+                # check remember me
+                self.get_element_wait_clickable(by=By.XPATH, element='//*[@id="rememberusername"]').click()
                 sleep(0.5)
-                self.browser.find_element_by_xpath('//*[@id="loginbtn"]').click()
+                self.get_element_wait_clickable(by=By.XPATH, element='//*[@id="loginbtn"]').click()
 
             try:
                 # is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
-                is_loggedin = self.browser.find_element_by_xpath('//*[@id="page-footer"]/div/div[2]')
-            except:
+                is_loggedin = self.get_element_wait_clickable(by=By.XPATH, element='//*[@id="page-footer"]/div/div[2]')
+                # is_loggedin = self.browser.find_element_by_xpath('//*[@id="page-footer"]/div/div[2]')
+            except Exception as e:
                 logging.info("Login failed. Are username & password correct?")
                 logging.debug(f"login with {self.moodle_username}/{self.moodle_password} failed. Trying again...")
+                logging.exception(e, e.args)
                 continue
 
             if is_loggedin:
@@ -251,14 +275,17 @@ class MoodleBot:
         course = course.replace("ی", "ي")
         course = course.replace("ک", "ك")
         try:
-            self.browser.find_element_by_partial_link_text(course).click()
-            sleep(2)
+            self.get_element_wait_presence(by=By.PARTIAL_LINK_TEXT, element=course).click()
+            # self.browser.find_element_by_partial_link_text(course).click()
+            # sleep(2)
         except common.exceptions.NoSuchElementException:
             logging.exception(f"Could not find the course. Are you sure the course '{course}' exists?")
         assert course in self.browser.title, "Did not load course successfully"
         # except Exception as e:
         #     logging.error(f"Could not find course '{course}' in workspace.\n  Exception details: {e}")
-        self.browser.find_element_by_partial_link_text('کلاس آنلاین').click()
+
+        self.get_element_wait_presence(by=By.PARTIAL_LINK_TEXT, element='کلاس آنلاین').click()
+        # self.browser.find_element_by_partial_link_text('کلاس آنلاین').click()
         assert "پيوستن به كلاس" in self.browser.page_source, "Could not find 'پيوستن به کلاس' button"
         logging.info(f"Loaded course '{course}'")
 
@@ -274,9 +301,10 @@ class MoodleBot:
                 self.browser.switch_to.window(windows[0])
 
     def join_adobe_class(self, class_length_in_minutes=90):
-
-        join_class = self.browser.find_element_by_xpath(
-            '/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
+        join_class = self.get_element_wait_clickable(by=By.XPATH,
+                                                     element='/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
+        # join_class = self.browser.find_element_by_xpath(
+        #     '/html/body/div[1]/div[2]/div/div/section/div/div[1]/form/div/div[2]/div[1]/input')
         join_class.click()
 
         # copy adobe class url and reopen it in a new tab
@@ -307,25 +335,29 @@ class MoodleBot:
 
         # fixing problem with adobe flash, open in browser
         self.browser.get(adobe_class_url + "&proto=true")
-        sleep(5)
+        ## sleep(5)
         # assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected, could not join online class"
-        # assert "کلاس آنلاين"
 
         # Click Open in Browser and join class
-        self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
+        self.get_element_wait_clickable(by=By.XPATH, element='/html/body/center/div[1]/div[3]/div[7]/button').click()
+        # self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
         logging.info(f"Joined adobe online class '{self.browser.title}'"
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
-        sleep(25)
 
-        # TODO Auto-Reply
+        # ## Auto-Reply ## #
+        WebDriverWait(self.browser, 80).until(
+            EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
+        ## sleep(30)
+        # self.browser.switch_to.frame(By.ID, 'html-meeting-frame')
 
-        self.browser.switch_to.frame('html-meeting-frame')
         my_replys = []
         chat_history = ""
         last_chat_len = 0
 
         def send_message(msg, reply_list):
             reply_list.append(msg)
+            # self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatTypingArea"]').send_keys(f" {msg} ",
+            #                                                                                            Keys.RETURN)
             # self.browser.find_element_by_xpath('//*[@id="chatTypingArea"]').send_keys(f" {msg} ", Keys.RETURN)
             logging.info(f"Sent '{msg}' at {datetime.now()}")
 
@@ -338,7 +370,13 @@ class MoodleBot:
             for i in range(0, 30):
                 sleep(1)
                 try:
-                    chat_history_elmnt = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
+                    chat_history_elmnt = self.get_element_wait_presence(by=By.XPATH,
+                                                                        element='//*[@id="chatContentAreaContainer"]',
+                                                                        wait=60)
+                    # chat_history_elmnt = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
+                    if chat_history_elmnt:
+                        break
+
                 except NoSuchElementException as e:
                     logging.exception("Could not find chatContentAreaContainer element")
                     continue
@@ -362,25 +400,32 @@ class MoodleBot:
                 except NoSuchElementException as e:
                     logging.exception("Could not get chat history element text")
                     continue
-                except WebDriverException as e:
-                    logging.exception(f"WebDriverException\tcontinuing...")
-                    continue
                 except InvalidSessionIdException:
                     logging.exception(f"InvalidSessionIdException\tcontinuing...")
+                    continue
+                except WebDriverException as e:
+                    logging.exception(f"WebDriverException\tcontinuing...")
                     continue
                 except Exception as e:
                     logging.exception("Unknown exception\nRefreshing page...", e)
 
                     self.browser.refresh()
-                    popup = self.browser.switch_to.alert
-                    popup.accept()
-                    sleep(5)
+                    try:
+                        popup = self.browser.switch_to.alert
+                        popup.accept()
+                    except NoAlertPresentException as e:
+                        pass
+                    ## sleep(5)
 
                     # Click Open in Browser and join class
-                    self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
+                    self.get_element_wait_clickable(by=By.XPATH,
+                                                    element='/html/body/center/div[1]/div[3]/div[7]/button').click()
+                    # self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
                     logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
-                    sleep(40)
-                    self.browser.switch_to.frame('html-meeting-frame')
+                    ## sleep(30)
+                    WebDriverWait(self.browser, 80).until(
+                        EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
+                    # self.browser.switch_to.frame('html-meeting-frame')
                     chat_history_element = get_chat_history_element()
                     continue
 
@@ -426,7 +471,6 @@ class MoodleBot:
                 logging.info(f"Next class is {job} at {job.next_run}, will stay standby till then.")
 
     def run_all_in_thread(self, course, duration):
-        # self.browser =
         # self.browser.implicitly_wait(2)
         # self.browser.set_script_timeout(10)
         # self.browser.set_page_load_timeout(15)
@@ -440,7 +484,6 @@ class MoodleBot:
         # Join online class and wait 'duration' minutes then quit
         self.join_adobe_class(class_length_in_minutes=duration)
         self.load_standby()
-        # self.browser.quit()
 
     def i_am_present(self, at_course, for_duration=90):
         # thread = threading.Thread(target=self.run_all_in_thread, args=(at_course, for_duration))
@@ -472,14 +515,14 @@ def schedule_me(bot_obj):
         now_plus_m = datetime.now() + timedelta(minutes=m)
         return now_plus_m.strftime("%H:%M")
 
-    # schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now()).do(func, at_course="تفسیر",
+    schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now()).do(func, at_course="تفسیر",
                                                                                   for_duration=2)
-    # schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(4)).do(func, at_course="آیین",
+    schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(4)).do(func, at_course="آیین",
                                                                                    for_duration=30)
-    # schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(35)).do(func, at_course="شبکه",
+    schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(35)).do(func, at_course="شبکه",
                                                                                     for_duration=2)
-    # schedule.every().tag(bot_obj.moodle_username).saturday.at(minute_from_now(40)).do(func, at_course="پایگاه",
-    #                                                                                  for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).saturday.at(minute_from_now(40)).do(func, at_course="پایگاه",
+                                                                                      for_duration=2)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
