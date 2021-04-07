@@ -35,6 +35,7 @@ PWD = os.getcwd()
 FLASH_PATH = rf"{PWD}/drivers/libnflashplayer.so"
 FIREFOX_DRIVER_PATH = rf"{PWD}/drivers/geckodriver"
 FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
+CHROME_BINARY_PATH = rf"{PWD}/chrome/chrome"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
 # parse command line arguments
@@ -83,7 +84,7 @@ def chrome_builder():
     for arg in args_to_add:
         options.add_argument(arg)
 
-    # options.binary_location = "/var/lib/snapd/snap/bin/chromium"
+    # options.binary_location = CHROME_BINARY_PATH
 
     # options.add_argument("--disable-gpu")
     # options.add_argument(f"--ppapi-flash-path={FLASH_PATH}")
@@ -193,6 +194,10 @@ class MoodleBot:
         self.moodle_password = moodle_password
         # self.browser = firefox_builder()
         self.browser = chrome_builder()
+
+        # self.browser.execute_script("""navigator.__defineGetter__('platform', function(){
+        #     return 'Linux x86_64' });""")
+        # logging.info(f"Platform: {self.browser.execute_script('return navigator.platform')}")
         logging.info(f"UserAgent: {self.browser.execute_script('return navigator.userAgent')}")
 
     def get_element_wait_presence(self, by, element, wait=40):
@@ -200,7 +205,7 @@ class MoodleBot:
             element = WebDriverWait(self.browser, wait).until(EC.presence_of_element_located((by, element)))
             return element
         except (NoSuchElementException, WebDriverException) as e:
-            logging.exception(f"Could not find element '{element}' by '{by}' on page {self.browser.current_url}")
+            logging.exception(f"Could not find element: '{element}' by: '{by}' on page: '{self.browser.current_url}'")
             logging.exception(e, e.args)
 
     def get_element_wait_clickable(self, by, element, wait=40):
@@ -343,13 +348,15 @@ class MoodleBot:
         # assert "Adobe Connect requires Flash" not in self.browser.page_source, "Flash is not working as expected"
 
         # Click Open in Browser and join class
-        self.get_element_wait_clickable(by=By.XPATH, element='/html/body/center/div[1]/div[3]/div[7]/button').click()
-        # self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
+        # if platform.system().lower() == "windows":
+        self.get_element_wait_clickable(by=By.XPATH, element='/html/body/center/div[1]/div[3]/div[7]/button')
+        self.browser.execute_script("""openMeetingInHtmlClient();""")
+
         logging.info(f"Joined adobe online class '{self.browser.title}'"
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
 
         # ## Auto-Reply ## #
-        WebDriverWait(self.browser, 80).until(
+        WebDriverWait(self.browser, 120).until(
             EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
         # sleep(30)
         # self.browser.switch_to.frame(By.ID, 'html-meeting-frame')
@@ -407,9 +414,9 @@ class MoodleBot:
                 except InvalidSessionIdException:
                     logging.exception(f"InvalidSessionIdException\tcontinuing...", e)
                     continue
-                except WebDriverException as e:
-                    logging.exception(f"WebDriverException\tcontinuing...", e)
-                    continue
+                # except WebDriverException as e:
+                #     logging.exception(f"WebDriverException\tcontinuing...", e)
+                #     continue
                 except Exception as e:
                     logging.exception("Unknown exception\nRefreshing page...", e)
 
@@ -423,16 +430,16 @@ class MoodleBot:
 
                     # Click Open in Browser and join class
                     self.get_element_wait_clickable(by=By.XPATH,
-                                                    element='/html/body/center/div[1]/div[3]/div[7]/button').click()
-                    # self.browser.find_element_by_xpath('/html/body/center/div[1]/div[3]/div[7]/button').click()
+                                                    element='/html/body/center/div[1]/div[3]/div[7]/button')
+                    self.browser.execute_script("""openMeetingInHtmlClient();""")
+
                     logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
                     # sleep(30)
-                    WebDriverWait(self.browser, 80).until(
+                    WebDriverWait(self.browser, 120).until(
                         EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
                     # self.browser.switch_to.frame('html-meeting-frame')
                     chat_history_element = get_chat_history_element()
                     continue
-
                 if len(chat_history) > last_chat_len:  # if there were new messages
                     last_chat_len = len(chat_history)
                     for message in chat_history.split("\n"):
@@ -519,14 +526,14 @@ def schedule_me(bot_obj):
         now_plus_m = datetime.now() + timedelta(minutes=m)
         return now_plus_m.strftime("%H:%M")
 
-    schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now()).do(func, at_course="تفسیر",
-                                                                                  for_duration=2)
-    schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(4)).do(func, at_course="آیین",
-                                                                                   for_duration=30)
-    schedule.every().tag(bot_obj.moodle_username).sunday.at(minute_from_now(35)).do(func, at_course="شبکه",
-                                                                                    for_duration=2)
-    schedule.every().tag(bot_obj.moodle_username).saturday.at(minute_from_now(40)).do(func, at_course="پایگاه",
-                                                                                      for_duration=2)
+    mfrom = minute_from_now
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at(mfrom(1)).do(func, at_course="ریاضی", for_duration=2)
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at(mfrom(4)).do(func, at_course="اینترنت", for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).tuesday.at(mfrom(7)).do(func, at_course="شبکه", for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).tuesday.at(mfrom(10)).do(func, at_course="تفسیر", for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).tuesday.at(mfrom(13)).do(func, at_course="مبانی", for_duration=2)
+    # schedule.every().tag(bot_obj.moodle_username).tuesday.at(mfrom(16)).do(func, at_course="آیین", for_duration=3)
+    # schedule.every().tag(bot_obj.moodle_username).tuesday.at(mfrom(20)).do(func, at_course="پایگاه", for_duration=90)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
