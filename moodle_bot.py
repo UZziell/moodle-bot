@@ -375,65 +375,40 @@ class MoodleBot:
             logging.debug(f"'{pattern}' in '{text_list}'\t\t repeated '{len(re.findall(pattern, text))}' times")
             return len(re.findall(pattern, text))
 
-        def get_chat_history_element():
-            for i in range(0, 30):
-                sleep(1)
-                try:
-                    chat_history_elmnt = self.get_element_wait_presence(by=By.XPATH,
-                                                                        element='//*[@id="chatContentAreaContainer"]',
-                                                                        wait=60)
-                    # chat_history_elmnt = self.browser.find_element_by_xpath('//*[@id="chatContentAreaContainer"]')
-                    # if chat_history_elmnt:
-                    #    break
-
-                except NoSuchElementException as e:
-                    logging.exception("Could not find chatContentAreaContainer element", e)
-                    continue
-                except WebDriverException as e:
-                    logging.exception(f"WebDriverException\tcontinuing...", e)
-                    continue
-
-            return chat_history_elmnt
-
         def spinning_cursor():
             while True:
                 for cursor in '|/-\\':
                     yield cursor
 
-        chat_history_element = get_chat_history_element()
         spinner = spinning_cursor()
-
         sleep_seconds = 5
         const = int(60 / sleep_seconds)
+
         for i in range(class_length_in_minutes * const):
             sys.stdout.write(next(spinner))
             sys.stdout.flush()
             sleep(sleep_seconds)
             sys.stdout.write('\b')
 
-            replys = []
             if AUTOREPLY:
                 try:
-                    chat_history = chat_history_element.text
+                    self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatIndividualMessageContent"]')
+                    chat_messages = self.browser.find_elements_by_xpath('//*[@id="chatIndividualMessageContent"]')
                 except NoSuchElementException as e:
                     logging.exception("Could not get chat history element text", e)
                     continue
-                # except InvalidSessionIdException:
-                #    logging.exception(f"InvalidSessionIdException\tcontinuing...", e)
-                #    continue
-                # except WebDriverException as e:
-                #     logging.exception(f"WebDriverException\tcontinuing...", e)
-                #     continue
                 except:
                     # logging.exception("Unknown exception\nRefreshing page...", e)
                     logging.exception("Unknown exception\nRefreshing page...")
-
-                    self.browser.refresh()
                     try:
+                        self.browser.refresh()
                         popup = self.browser.switch_to.alert
                         popup.accept()
-                    except NoAlertPresentException as e:
+                    except NoAlertPresentException:
                         pass
+                    except UnexpectedAlertPresentException:
+                        alert = self.browser.switch_to.alert
+                        alert.accept()
                     # sleep(5)
 
                     # Click Open in Browser and join class
@@ -447,16 +422,18 @@ class MoodleBot:
                     self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatIndividualMessageContent"]')
                     chat_messages = self.browser.find_elements_by_xpath('//*[@id="chatIndividualMessageContent"]')
                     continue
-                if len(chat_history) > last_chat_len:  # if there were new messages
-                    last_chat_len = len(chat_history)
-                    for message in chat_history.split("\n"):
-                        if ":" in message:
-                            replys.append(message.split(":")[1])
+                if len(chat_messages) > last_chat_len:  # if there were new messages
+                    last_chat_len = len(chat_messages)
 
-                    last_replies = "\n".join(replys[-10:])
+                    last_replies_list = []
+                    for message in chat_messages[-10:]:
+                        last_replies_list.append(message.text)
+
+                    last_replies = "\n".join(last_replies_list[-10:])
+
                     # slm
                     if (count_repeat(".*[sS]a?la?m.*", last_replies) + count_repeat(".*سلام.*", last_replies)) > 5 \
-                            and "slm" not in my_replys[-3:]:
+                            and "slm" not in my_replys[-5:]:
                         send_message("slm", my_replys)
                     # bale
                     elif (count_repeat(".*[bB]a?le.*", last_replies) + count_repeat(".*بله.*", last_replies)) > 5 \
@@ -465,7 +442,7 @@ class MoodleBot:
 
                     # khaste nabashid
                     elif (count_repeat(".*[kK]ha?steh?.*", last_replies) + count_repeat(".*خسته.*", last_replies)) > 4 \
-                            and "خسته نباشید." not in my_replys[-3:] and i > 15:
+                            and "خسته نباشید." not in my_replys and i > 20*const:
 
                         send_message("خسته نباشید.", my_replys)
                         break  # exit class
@@ -478,7 +455,14 @@ class MoodleBot:
         windows = self.browser.window_handles
         for win in windows[1:]:
             self.browser.switch_to.window(win)
-            self.browser.close()
+            try:
+                self.browser.close()
+            except NoAlertPresentException:
+                pass
+            except UnexpectedAlertPresentException:
+                alert = self.browser.switch_to.alert
+                alert.accept()
+
         self.browser.switch_to.window(windows[0])
         self.browser.get(f"file://{PWD}/stand-by.html")
 
