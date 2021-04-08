@@ -11,6 +11,7 @@ import logging
 import os
 import pickle
 import re
+import sys
 from datetime import datetime, timedelta
 # import threading
 from time import sleep
@@ -391,12 +392,21 @@ class MoodleBot:
 
             return chat_history_elmnt
 
+        def spinning_cursor():
+            while True:
+                for cursor in '|/-\\':
+                    yield cursor
+
         chat_history_element = get_chat_history_element()
+        spinner = spinning_cursor()
 
         sleep_seconds = 5
         const = int(60 / sleep_seconds)
         for i in range(class_length_in_minutes * const):
+            sys.stdout.write(next(spinner))
+            sys.stdout.flush()
             sleep(sleep_seconds)
+            sys.stdout.write('\b')
 
             replys = []
             if AUTOREPLY:
