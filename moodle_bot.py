@@ -18,14 +18,16 @@ from time import sleep
 
 import schedule
 from selenium import webdriver, common
-from selenium.common.exceptions import NoSuchElementException, WebDriverException, InvalidSessionIdException, \
-    NoAlertPresentException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException, NoAlertPresentException, \
+    UnexpectedAlertPresentException, InvalidSessionIdException
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
 # from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 
 # from secrets import USERNAME, PASSWORD
@@ -80,7 +82,9 @@ def chrome_builder():
                    "--disable-save-password-bubble", "--disable-features=EnableEphemeralFlashPermission",
                    "user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36",
                    "--no-sandbox", "--window-size=1480,920"]
-    options = webdriver.chrome.options.Options()
+    options = ChromeOptions()
+    options.add_argument("--disable-popup-blocking")
+    options.headless = HEADLESS
 
     # for arg in args_to_add:
     #    options.add_argument(arg)
@@ -92,7 +96,6 @@ def chrome_builder():
     # options.add_argument("--ppapi-flash-version=32.0.0.433")
     # options.add_argument("--remote-debugging-port=9222")
     # options.add_argument("user-data-dir=./Profile")
-    options.headless = HEADLESS
 
     prefs = {
         "profile.default_content_setting_values.plugins": 1,
@@ -153,7 +156,7 @@ def firefox_builder():
     ##
     profile.update_preferences()
 
-    opts = webdriver.firefox.options.Options()
+    opts = FirefoxOptions
     opts.headless = HEADLESS
 
     browser = webdriver.Firefox(firefox_binary=binary, options=opts, firefox_profile=profile,
@@ -199,7 +202,7 @@ class MoodleBot:
 
     def get_element_wait_presence(self, by, element, wait=40):
         try:
-            element = WebDriverWait(self.browser, wait).until(EC.presence_of_element_located((by, element)))
+            element = WebDriverWait(self.browser, wait).until(ec.presence_of_element_located((by, element)))
             return element
         except (NoSuchElementException, WebDriverException) as e:
             logging.exception(f"Could not find element: '{element}' by: '{by}' on page: '{self.browser.current_url}'")
@@ -207,7 +210,7 @@ class MoodleBot:
 
     def get_element_wait_clickable(self, by, element, wait=40):
         try:
-            element = WebDriverWait(self.browser, wait).until(EC.element_to_be_clickable((by, element)))
+            element = WebDriverWait(self.browser, wait).until(ec.element_to_be_clickable((by, element)))
             return element
         except (NoSuchElementException, WebDriverException) as e:
             logging.exception(f"Could not find element '{element}' by '{by}' on page {self.browser.current_url}")
@@ -215,7 +218,7 @@ class MoodleBot:
 
     def moodle_login(self, login_url=LOGIN_URL):
         cookie_file = f"{COOKIES_PATH}{self.moodle_username}-cookies.pkl"
-
+        is_loggedin = False
         while True:
             self.browser.get(login_url)
             assert "آموزش مجازی" or "Log in" in self.browser.page_source, "Could not properly load LMS Login page!"
@@ -354,7 +357,7 @@ class MoodleBot:
 
         # ## Auto-Reply ## #
         WebDriverWait(self.browser, 120).until(
-            EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
+            ec.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
         # sleep(30)
         # self.browser.switch_to.frame(By.ID, 'html-meeting-frame')
 
@@ -439,11 +442,10 @@ class MoodleBot:
                     self.browser.execute_script("""openMeetingInHtmlClient();""")
 
                     logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
-                    # sleep(30)
                     WebDriverWait(self.browser, 120).until(
-                        EC.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
-                    # self.browser.switch_to.frame('html-meeting-frame')
-                    chat_history_element = get_chat_history_element()
+                        ec.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
+                    self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatIndividualMessageContent"]')
+                    chat_messages = self.browser.find_elements_by_xpath('//*[@id="chatIndividualMessageContent"]')
                     continue
                 if len(chat_history) > last_chat_len:  # if there were new messages
                     last_chat_len = len(chat_history)
@@ -533,9 +535,9 @@ def schedule_me(bot_obj):
         return now_plus_m.strftime("%H:%M")
 
     mfrom = minute_from_now
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(1)).do(func, at_course="ریاضی", for_duration=60)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=60)
     schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(64)).do(func, at_course="اینترن", for_duration=60)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(129)).do(func, at_course="تفسیر", for_duration=60)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(129)).do(func, at_course="ریاضی", for_duration=60)
     schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(206)).do(func, at_course="مبانی", for_duration=60)
     schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(280)).do(func, at_course="آیین", for_duration=60)
 
