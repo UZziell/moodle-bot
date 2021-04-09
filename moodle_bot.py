@@ -78,17 +78,16 @@ logging.info(f"Current input and config:\
 
 
 def chrome_builder():
-    args_to_add = ["--disable-infobars", "--disable-password-generation", "--disable-password-manager-reauthentication",
-                   "--disable-save-password-bubble", "--disable-features=EnableEphemeralFlashPermission",
-                   "user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36",
-                   "--no-sandbox", "--window-size=1480,920"]
-    options = ChromeOptions()
-    options.add_argument("--disable-popup-blocking")
-    options.headless = HEADLESS
-
+    # args_to_add = ["--no-sandbox", "--disable-password-generation", "--disable-password-manager-reauthentication",
+    #                "--disable-save-password-bubble", "--disable-features=EnableEphemeralFlashPermission",
+    #                "user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/89.0.4389.114 Safari/537.36",
+    #                "--disable-infobars", "--window-size=1480,920", "--disable-popup-blocking"]
     # for arg in args_to_add:
     #    options.add_argument(arg)
 
+    options = ChromeOptions()
+    options.add_argument("--disable-popup-blocking")
+    options.headless = HEADLESS
     # options.binary_location = CHROME_BINARY_PATH
 
     # options.add_argument("--disable-gpu")
@@ -367,7 +366,8 @@ class MoodleBot:
 
         def send_message(msg, reply_list):
             reply_list.append(msg)
-            # self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatTypingArea"]').send_keys(f" {msg} ", Keys.RETURN)
+            # self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatTypingArea"]').send_keys(f" {msg} ",
+            #                                                                                            Keys.RETURN)
             logging.info(f"Sent '{msg}' at {datetime.now()}")
 
         def count_repeat(pattern, text):
@@ -442,7 +442,7 @@ class MoodleBot:
 
                     # khaste nabashid
                     elif (count_repeat(".*[kK]ha?steh?.*", last_replies) + count_repeat(".*خسته.*", last_replies)) > 4 \
-                            and "خسته نباشید." not in my_replys and i > 20*const:
+                            and "خسته نباشید." not in my_replys and i > 20 * const:
 
                         send_message("خسته نباشید.", my_replys)
                         break  # exit class
@@ -460,6 +460,9 @@ class MoodleBot:
             except NoAlertPresentException:
                 pass
             except UnexpectedAlertPresentException:
+                alert = self.browser.switch_to.alert
+                alert.accept()
+
                 alert = self.browser.switch_to.alert
                 alert.accept()
 
@@ -519,11 +522,11 @@ def schedule_me(bot_obj):
         return now_plus_m.strftime("%H:%M")
 
     mfrom = minute_from_now
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=60)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(64)).do(func, at_course="اینترن", for_duration=60)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(129)).do(func, at_course="ریاضی", for_duration=60)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(206)).do(func, at_course="مبانی", for_duration=60)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(280)).do(func, at_course="آیین", for_duration=60)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=20)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(30)).do(func, at_course="اینترن", for_duration=20)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(60)).do(func, at_course="ریاضی", for_duration=20)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(90)).do(func, at_course="مبانی", for_duration=20)
+    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(120)).do(func, at_course="آیین", for_duration=99)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
