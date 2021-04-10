@@ -19,7 +19,7 @@ from time import sleep
 import schedule
 from selenium import webdriver, common
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, NoAlertPresentException, \
-    UnexpectedAlertPresentException, InvalidSessionIdException
+    UnexpectedAlertPresentException, TimeoutException  # ,InvalidSessionIdException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
 # from selenium.webdriver import ActionChains
@@ -96,26 +96,26 @@ def chrome_builder():
     # options.add_argument("--remote-debugging-port=9222")
     # options.add_argument("user-data-dir=./Profile")
 
-    prefs = {
-        "profile.default_content_setting_values.plugins": 1,
-        "profile.content_settings.plugin_whitelist.adobe-flash-player": 1,
-        "profile.content_settings.exceptions.plugins.*,*.per_resource.adobe-flash-player": 1,
-        "profile.content_settings.exceptions.plugins.*,*.setting": 1,
-        "profile.managed_plugins_allowed_for_urls": ["https://ac.aminidc.com", "http://lms.ikiu.ac.ir/",
-                                                     "https://www.whatismybrowser.com:443", LOGIN_URL],
-        "plugins.run_all_flash_in_allow_mode": True,
-        "plugins.RunAllFlashInAllowMode": True,
-
-        # "browser.pepper_flash_settings_enabled": True,
-        # "profile.default_content_setting_values.plugins": 1,
-        # "profile.content_settings.plugin_whitelist.adobe-flash-player": 1,
-        # "profile.content_settings.exceptions.plugins.*,*.per_resource.adobe-flash-player": 1,
-        # "profile.content_settings.exceptions.plugins.*,*.setting": 1,
-        # "profile.default_content_setting_values.flash_data": 1,
-        # "profile.default_content_setting_values.flash-data": 1,
-        # "DefaultPluginsSetting" : 1,
-        # "PluginsAllowedForUrls": "https://www.whatismybrowser.com/detect/is-flash-installed"
-    }
+    # prefs = {
+    #     "profile.default_content_setting_values.plugins": 1,
+    #     "profile.content_settings.plugin_whitelist.adobe-flash-player": 1,
+    #     "profile.content_settings.exceptions.plugins.*,*.per_resource.adobe-flash-player": 1,
+    #     "profile.content_settings.exceptions.plugins.*,*.setting": 1,
+    #     "profile.managed_plugins_allowed_for_urls": ["https://ac.aminidc.com", "http://lms.ikiu.ac.ir/",
+    #                                                  "https://www.whatismybrowser.com:443", LOGIN_URL],
+    #     "plugins.run_all_flash_in_allow_mode": True,
+    #     "plugins.RunAllFlashInAllowMode": True,
+    #
+    #     # "browser.pepper_flash_settings_enabled": True,
+    #     # "profile.default_content_setting_values.plugins": 1,
+    #     # "profile.content_settings.plugin_whitelist.adobe-flash-player": 1,
+    #     # "profile.content_settings.exceptions.plugins.*,*.per_resource.adobe-flash-player": 1,
+    #     # "profile.content_settings.exceptions.plugins.*,*.setting": 1,
+    #     # "profile.default_content_setting_values.flash_data": 1,
+    #     # "profile.default_content_setting_values.flash-data": 1,
+    #     # "DefaultPluginsSetting" : 1,
+    #     # "PluginsAllowedForUrls": "https://www.whatismybrowser.com/detect/is-flash-installed"
+    # }
     # options.add_experimental_option("prefs", prefs)
 
     # Chrome flash setup and check
@@ -203,9 +203,12 @@ class MoodleBot:
         try:
             element = WebDriverWait(self.browser, wait).until(ec.presence_of_element_located((by, element)))
             return element
+        except TimeoutException as ex:
+            logging.exception("TimeoutException, full stack trace:", ex)
+            raise
         except (NoSuchElementException, WebDriverException) as e:
-            logging.exception(f"Could not find element: '{element}' by: '{by}' on page: '{self.browser.current_url}'")
-            logging.exception(e, e.args)
+            logging.error(f"Could not find element: '{element}' by: '{by}' on page: '{self.browser.current_url}'")
+            logging.exception(e)
 
     def get_element_wait_clickable(self, by, element, wait=40):
         try:
@@ -261,6 +264,8 @@ class MoodleBot:
                 # is_loggedin = self.browser.find_element(By.ID, "page-wrapper").find_element(By.ID, "page-footer")
                 is_loggedin = self.get_element_wait_presence(by=By.XPATH, element='//*[@id="page-footer"]/div/div[2]')
                 # is_loggedin = self.browser.find_element_by_xpath('//*[@id="page-footer"]/div/div[2]')
+            except TimeoutException:
+                logging.warning(f"loading {self.browser.current_url} timeout! \tretrying...")
             except Exception as e:
                 logging.info("Login failed. Are username & password correct?")
                 logging.debug(f"login with {self.moodle_username}/{self.moodle_password} failed. Trying again...")
@@ -397,6 +402,8 @@ class MoodleBot:
                 except NoSuchElementException as e:
                     logging.exception("Could not get chat history element text", e)
                     continue
+                except TimeoutException:
+                    logging.warning("TimeoutException - No messages in chat box yet, continuing...")
                 except:
                     # logging.exception("Unknown exception\nRefreshing page...", e)
                     logging.exception("Unknown exception\nRefreshing page...")
@@ -522,11 +529,11 @@ def schedule_me(bot_obj):
         return now_plus_m.strftime("%H:%M")
 
     mfrom = minute_from_now
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=20)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(30)).do(func, at_course="اینترن", for_duration=20)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(60)).do(func, at_course="ریاضی", for_duration=20)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(90)).do(func, at_course="مبانی", for_duration=20)
-    schedule.every().tag(bot_obj.moodle_username).thursday.at(mfrom(120)).do(func, at_course="آیین", for_duration=99)
+    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(30)).do(func, at_course="اینترن", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(60)).do(func, at_course="ریاضی", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(90)).do(func, at_course="مبانی", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(120)).do(func, at_course="آیین", for_duration=99)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
