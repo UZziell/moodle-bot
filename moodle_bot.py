@@ -8,6 +8,8 @@ It uses Selenium WebDriver and schedule module.
 import argparse
 import datetime
 import logging
+import colorama
+from colorama import Fore, Back, Style
 import os
 import pickle
 import re
@@ -59,6 +61,7 @@ log_level = logging.INFO
 if args.debug:
     log_level = logging.DEBUG
 logging.basicConfig(format="[%(asctime)s]  %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=log_level)
+colorama.init()
 
 # Options
 AUTOREPLY = not args.no_autoreply
@@ -321,7 +324,8 @@ class MoodleBot:
 
         # copy adobe class url and reopen it in a new tab
         self.switch_tab()
-        sleep(2)
+        self.get_element_wait_presence(by=By.XPATH, element='//*[@id="systemContainer"]')
+        adobe_class_url = False
         referrer = self.browser.execute_script('return window.document.referrer')
         if "session" in referrer.lower():
             adobe_class_url = referrer
@@ -343,7 +347,7 @@ class MoodleBot:
         self.browser.find_element_by_partial_link_text('میز کار').send_keys(Keys.CONTROL, Keys.RETURN)
         # ActionChains(browser).move_to_element(browser.find_element_by_partial_link_text('میز کار')).send_keys(
         #    Keys.CONTROL, Keys.RETURN).perform()
-        sleep(2)
+        sleep(0.5)
         self.switch_tab()
 
         # fixing problem with adobe flash, open in browser
@@ -373,7 +377,7 @@ class MoodleBot:
             reply_list.append(msg)
             # self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatTypingArea"]').send_keys(f" {msg} ",
             #                                                                                            Keys.RETURN)
-            logging.info(f"Sent '{msg}' at {datetime.now()}")
+            logging.info(f"{Fore.GREEN}Sent '{msg}' at {datetime.now()}{Style.RESET_ALL}")
 
         def count_repeat(pattern, text):
             text_list = text.split("\n")
@@ -390,10 +394,10 @@ class MoodleBot:
         const = int(60 / sleep_seconds)
 
         for i in range(class_length_in_minutes * const):
-            sys.stdout.write(next(spinner))
+            sys.stdout.write(f"waiting to reply {next(spinner)}")
             sys.stdout.flush()
             sleep(sleep_seconds)
-            sys.stdout.write('\b')
+            sys.stdout.write('\r')
 
             if AUTOREPLY:
                 try:
@@ -423,12 +427,6 @@ class MoodleBot:
                                                     element='/html/body/center/div[1]/div[3]/div[7]/button')
                     self.browser.execute_script("""openMeetingInHtmlClient();""")
 
-                    logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
-                    WebDriverWait(self.browser, 120).until(
-                        ec.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
-                    self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatIndividualMessageContent"]')
-                    chat_messages = self.browser.find_elements_by_xpath('//*[@id="chatIndividualMessageContent"]')
-                    continue
                 if len(chat_messages) > last_chat_len:  # if there were new messages
                     last_chat_len = len(chat_messages)
 
@@ -439,11 +437,11 @@ class MoodleBot:
                     last_replies = "\n".join(last_replies_list[-10:])
 
                     # slm
-                    if (count_repeat(".*[sS]a?la?m.*", last_replies) + count_repeat(".*سلام.*", last_replies)) > 5 \
+                    if (count_repeat(".*[sS]a?la?m.*", last_replies) + count_repeat(".*سلام.*", last_replies)) > 4 \
                             and "slm" not in my_replys[-5:]:
                         send_message("slm", my_replys)
                     # bale
-                    elif (count_repeat(".*[bB]a?le.*", last_replies) + count_repeat(".*بله.*", last_replies)) > 5 \
+                    elif (count_repeat(".*[bB]a?le.*", last_replies) + count_repeat(".*بله.*", last_replies)) > 4 \
                             and "bale" not in my_replys[-3:]:
                         send_message("bale", my_replys)
 
@@ -467,9 +465,6 @@ class MoodleBot:
             except NoAlertPresentException:
                 pass
             except UnexpectedAlertPresentException:
-                alert = self.browser.switch_to.alert
-                alert.accept()
-
                 alert = self.browser.switch_to.alert
                 alert.accept()
 
