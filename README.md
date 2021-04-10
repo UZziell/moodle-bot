@@ -31,15 +31,16 @@ To get a local copy up and running follow these steps.
 
 Download and install all prerequisites based on you operating system.
 
-* Download and install chromium (version 88.0.4324.182 tested) [From from chromium.org](https://www.chromium.org/getting-involved/download-chromium)
+* You need a browser, and its relevant driver so weather download and install:
+  * chromium (version 88.0.4324.182 tested) [chromium.org](https://www.chromium.org/getting-involved/download-chromium) + chromedriver [chromedriver.chromium.org](https://chromedriver.chromium.org/)
   <br />**or**<br />
-   firefox (version 72.0.2 tested) [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/)
+   * firefox (version 72.0.2 tested) [Download From ftp.mozilla.org](https://ftp.mozilla.org/pub/firefox/releases/) + geckodriver(version 0.26
+  recommended) [Download from github.com/mozilla](https://github.com/mozilla/geckodriver/releases/)
 
-** **NOTE** <br />
-if using linux, instead of manual installation, simply use package manager to install them (package names will probably be: chromium chromium-dirver or firefox geckodriver) ** 
+   ** **NOTE**: 
+   If using a unix-like os, instead of manual installation, simply use package manager to install them (package names will probably be: chromium chromium-dirver or firefox geckodriver) ** 
 
-* If decided to go with firefox, also download geckodriver - version 0.26
-  recommended  [Download from github.com/mozilla](https://github.com/mozilla/geckodriver/releases/tag/v0.26.0)
+
 * If python is not installed follow [Properly Installing Python](https://docs.python-guide.org/starting/installation/).
     * python selenium module and schedule module
 * ~~Adobe Flash Player for firefox~~ [~~Download from Adobe~~](https://get.adobe.com/flashplayer/)
