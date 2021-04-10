@@ -43,6 +43,9 @@ FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_BINARY_PATH = rf"{PWD}/chrome/chrome"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
+CHROME_BINARY_PATH = rf"/var/lib/snapd/snap/bin/chromium"
+CHROME_DRIVER_PATH = rf"/var/lib/snapd/snap/bin/chromium.chromedriver"
+
 # parse command line arguments
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('-u', '--username', required=True,
@@ -196,6 +199,7 @@ class MoodleBot:
         # self.browser = firefox_builder()
         self.browser = chrome_builder()
         self.browser.get(f"file://{PWD}/stand-by.html")
+        self.last_course = ""
 
         # self.browser.execute_script("""navigator.__defineGetter__('platform', function(){
         #     return 'Linux x86_64' });""")
@@ -288,6 +292,8 @@ class MoodleBot:
         logging.info("Saved session to file")
 
     def load_course(self, course):
+        self.last_course = course
+
         course = course.replace("ی", "ي")
         course = course.replace("ک", "ك")
         try:
@@ -409,23 +415,34 @@ class MoodleBot:
                 except TimeoutException:
                     logging.warning("TimeoutException - No messages in chat box yet, continuing...")
                 except:
-                    # logging.exception("Unknown exception\nRefreshing page...", e)
-                    logging.exception("Unknown exception\nRefreshing page...")
+                    logging.error(f"{Fore.BLACK}{Back.RED}Unknown exception! Due to possible driver crash,"
+                                  f" relaunching a new browser...{Style.RESET_ALL}")
                     try:
-                        self.browser.refresh()
-                        popup = self.browser.switch_to.alert
-                        popup.accept()
-                    except NoAlertPresentException:
-                        pass
+                        self.browser.quit()
+                    #     popup = self.browser.switch_to.alert
+                    #     popup.accept()
+                    # except NoAlertPresentException:
+                    #     pass
                     except UnexpectedAlertPresentException:
                         alert = self.browser.switch_to.alert
                         alert.accept()
-                    # sleep(5)
+                    sleep(1)
+                    self.browser = chrome_builder()
+                    minutes_left = class_length_in_minutes - (int(i * sleep_seconds / 60))
+                    self.i_am_present(at_course=self.last_course, for_duration=minutes_left)
+                    break
 
                     # Click Open in Browser and join class
-                    self.get_element_wait_clickable(by=By.XPATH,
-                                                    element='/html/body/center/div[1]/div[3]/div[7]/button')
-                    self.browser.execute_script("""openMeetingInHtmlClient();""")
+                    # self.get_element_wait_clickable(by=By.XPATH,
+                    #                                element='/html/body/center/div[1]/div[3]/div[7]/button')
+                    # self.browser.execute_script("""openMeetingInHtmlClient();""")
+                    #
+                    # logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
+                    # WebDriverWait(self.browser, 120).until(
+                    #    ec.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
+                    # self.get_element_wait_presence(by=By.XPATH, element='//*[@id="chatIndividualMessageContent"]')
+                    # chat_messages = self.browser.find_elements_by_xpath('//*[@id="chatIndividualMessageContent"]')
+                    # continue
 
                 if len(chat_messages) > last_chat_len:  # if there were new messages
                     last_chat_len = len(chat_messages)
