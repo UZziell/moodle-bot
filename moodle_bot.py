@@ -43,8 +43,6 @@ FIREFOX_BINARY_PATH = rf"{PWD}/firefox/firefox"
 CHROME_BINARY_PATH = rf"{PWD}/chrome/chrome"
 CHROME_DRIVER_PATH = rf"{PWD}/drivers/chromedriver"
 
-CHROME_BINARY_PATH = rf"/var/lib/snapd/snap/bin/chromium"
-CHROME_DRIVER_PATH = rf"/var/lib/snapd/snap/bin/chromium.chromedriver"
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description=__doc__)
