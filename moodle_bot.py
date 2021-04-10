@@ -534,16 +534,15 @@ def schedule_me(bot_obj):
     func = bot_obj.i_am_present
 
     # Test - only for testing purposes
-    def minute_from_now(m=1):
-        now_plus_m = datetime.now() + timedelta(minutes=m)
-        return now_plus_m.strftime("%H:%M")
-
-    mfrom = minute_from_now
-    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=20)
-    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(30)).do(func, at_course="اینترن", for_duration=20)
-    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(60)).do(func, at_course="ریاضی", for_duration=20)
-    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(90)).do(func, at_course="مبانی", for_duration=20)
-    # schedule.every().tag(bot_obj.moodle_username).friday.at(mfrom(120)).do(func, at_course="آیین", for_duration=99)
+    # def minute_from_now(m=1):
+    #     now_plus_m = datetime.now() + timedelta(minutes=m)
+    #     return now_plus_m.strftime("%H:%M")
+    # mfrom = minute_from_now
+    # schedule.every().tag(bot_obj.moodle_username).day.at(mfrom(1)).do(func, at_course="تفسیر", for_duration=3)
+    # schedule.every().tag(bot_obj.moodle_username).day.at(mfrom(30)).do(func, at_course="اینترن", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).day.at(mfrom(60)).do(func, at_course="ریاضی", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).day.at(mfrom(90)).do(func, at_course="مبانی", for_duration=20)
+    # schedule.every().tag(bot_obj.moodle_username).day.at(mfrom(120)).do(func, at_course="آیین", for_duration=99)
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
