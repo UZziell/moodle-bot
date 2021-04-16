@@ -91,6 +91,7 @@ def chrome_builder():
 
     options = ChromeOptions()
     options.add_argument("--disable-popup-blocking")
+    options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/89.0.114 Safari/537.36")
     options.headless = HEADLESS
     # options.binary_location = CHROME_BINARY_PATH
 
@@ -329,7 +330,7 @@ class MoodleBot:
         # copy adobe class url and reopen it in a new tab
         self.switch_tab()
         self.get_element_wait_presence(by=By.XPATH, element='//*[@id="systemContainer"]')
-        adobe_class_url = False
+        adobe_class_url = ""
         referrer = self.browser.execute_script('return window.document.referrer')
         if "session" in referrer.lower():
             adobe_class_url = referrer
@@ -368,8 +369,23 @@ class MoodleBot:
                      f"\n\t\t\twill be online in this class for '{class_length_in_minutes}' minutes")
 
         # ## Auto-Reply ## #
+        # Switch to default adobe meeting frame
         WebDriverWait(self.browser, 120).until(
             ec.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
+
+        # try to remove share pod
+        try:
+            wait_seconds = 30
+            sharepod_id = "connectPod20"
+            self.get_element_wait_presence(by=By.XPATH, element='//*[@id="connectPod20"]', wait=wait_seconds)
+            self.browser.execute_script("""document.getElementById("connectPod20").outerHTML = "";""")
+        except TimeoutException:
+            logging.warning(f"{Fore.YELLOW}Share pod not found after '{wait_seconds}' seconds.{Style.RESET_ALL}")
+        except:
+            logging.error(f"Could not remove Share pod! 'id={sharepod_id}'")
+        else:
+            logging.info(f"Share pod removed successfully. 'id={sharepod_id}'")
+
         # sleep(30)
         # self.browser.switch_to.frame(By.ID, 'html-meeting-frame')
 
@@ -426,7 +442,7 @@ class MoodleBot:
                         alert.accept()
                     sleep(1)
                     self.browser = chrome_builder()
-                    minutes_left = class_length_in_minutes - (int(i * sleep_seconds / 60))
+                    minutes_left = class_length_in_minutes - (int(i * sleep_seconds / 60) + 1)
                     self.i_am_present(at_course=self.last_course, for_duration=minutes_left)
                     break
 
@@ -434,7 +450,6 @@ class MoodleBot:
                     # self.get_element_wait_clickable(by=By.XPATH,
                     #                                element='/html/body/center/div[1]/div[3]/div[7]/button')
                     # self.browser.execute_script("""openMeetingInHtmlClient();""")
-                    #
                     # logging.info(f"Rejoined class\t\twill be online in this class for '{i}' minutes")
                     # WebDriverWait(self.browser, 120).until(
                     #    ec.frame_to_be_available_and_switch_to_it((By.ID, 'html-meeting-frame')))
@@ -546,7 +561,7 @@ def schedule_me(bot_obj):
 
     # fixed jobs
     schedule.every().tag(bot_obj.moodle_username).saturday.at("08:00").do(func, at_course="ریاضی")
-    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:09").do(func, at_course="اینترنت")
+    schedule.every().tag(bot_obj.moodle_username).saturday.at("10:00").do(func, at_course="اینترنت", for_duration=120)
     schedule.every().tag(bot_obj.moodle_username).saturday.at("14:00").do(func, at_course="شبکه")
     schedule.every().tag(bot_obj.moodle_username).saturday.at("18:00").do(func, at_course="پایگاه")
 
@@ -554,13 +569,15 @@ def schedule_me(bot_obj):
     schedule.every().tag(bot_obj.moodle_username).sunday.at("16:00").do(func, at_course="مبانی")
 
     schedule.every().tag(bot_obj.moodle_username).tuesday.at("16:00").do(func, at_course="آیین")
+    schedule.every().tag(bot_obj.moodle_username).wednesday.at("08:00").do(func, at_course="ﺱیﺲﺘﻣ")
+    schedule.every().tag(bot_obj.moodle_username).thursday.at("10:00").do(func, at_course="پﺭﺩﺍﺰﻧﺪﻫ")
 
     # schedule based on week's odd-even status
     if is_even_week():  # Even Weeks
         logging.info("This week is Even")
         schedule.every().tag(bot_obj.moodle_username).saturday.at("16:00").do(func, at_course="مبانی")
         schedule.every().tag(bot_obj.moodle_username).sunday.at("14:00").do(func, at_course="ریاضی")
-        schedule.every().tag(bot_obj.moodle_username).monday.at("08:00").do(func, at_course="اینترنت")
+        schedule.every().tag(bot_obj.moodle_username).monday.at("08:00").do(func, at_course="اینترنت", for_duration=120)
 
     else:  # Odd Weeks
         logging.info("This week is Odd")
