@@ -38,7 +38,7 @@ Download and install all prerequisites based on you operating system.
   recommended) [Download from github.com/mozilla](https://github.com/mozilla/geckodriver/releases/)
 
    ** **NOTE**: 
-   If using a unix-like os, instead of manual installation, simply use package manager to install them (package names will probably be: chromium chromium-dirver or firefox geckodriver) ** 
+   If using a unix-like os, instead of manual installation, simply use package manager to install them (package names will probably be: chromium chromium-driver or firefox geckodriver) and create symbolic links according to installation section to use them** 
 
 
 * If python is not installed follow [Properly Installing Python](https://docs.python-guide.org/starting/installation/).
@@ -51,28 +51,31 @@ Download and install all prerequisites based on you operating system.
     ```sh
     git clone https://github.com/UZziell/moodle-bot.git
     ```
-2. install selenium and schedule modules
+2. install selenium and schedule modules and colorama
     ```sh
-    python3 -m pip install selenium schedule
+    python3 -m pip install selenium schedule colorama
     ```
 
 #### Linux
 
-3. Extract and copy downloaded firefox to moodle-bot directory (Firefox executable must be
-   at `moodle-bot/firefox/firefox`)
-4. Copy `geckodriver` file to `moodle-bot/drivers/` directory
-5. Make sure both firefox binary(firefox/firefox) and geckodriver (drivers/geckodriver) are executable.
+3. Extract and copy downloaded browser(chrome or firefox) to moodle-bot (Browser's executable must be
+   at `moodle-bot/BROWSER/BROWSER`) 
+     
+4. Copy driver (weather `geckodriver` or `chromedriver`) file to `moodle-bot/drivers/` directory
+5. Make sure both browser binary and driver are executable.
 6. <del>Copy `lib*flashplayer.so` also to `moodle-bot/drivers/` and rename it to `libnflashplayer.so`</del>
 
 #### windows
 
-3. Install downloaded firefox to `moodle-bot/firefox` directory (Firefox executable must be
-   at `moodle-bot/firefox/firefox`)
-4. Extract and copy `geckodriver.exe` file to `moodle-bot/drivers/` directory
+3. Install downloaded browser to `moodle-bot/BROWSER` directory (browser executable must be
+   at `moodle-bot/BROWSER/BROWSER`)
+4. Extract and copy driver file to `moodle-bot/drivers/` directory
 5. <del>Install Adobe flash player</del>
 
-<del>\* **NOTE** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
-Despite of setting `app.update.auto` and `app.update.enabled` to `False` firefox keeps automatically updating itself. So
+**NOTE-1** BROWSER is weather firefox or chrome
+
+<del>\* **NOTE-2** \*:  After extracting or installing firefox, you may probably want to delete updater executable.
+In despite of setting `app.update.auto` and `app.update.enabled` to `False` firefox keeps automatically updating itself. So
 search for `updater` and `maintainer` executables in firefox directory and **delete** them.<del>
 
 <!-- USAGE EXAMPLES -->
@@ -105,7 +108,7 @@ search for `updater` and `maintainer` executables in firefox directory and **del
 
    For a course that has classes every other week, add the entry to `# Odd weeks` or `# Even week`
 
-2. Finally run the script (you should supply --url MOODLE_LOGIN_URL and also --username YOUR_USERNAME and --password
+2. Finally, run the script (you should supply --url MOODLE_LOGIN_URL and also --username YOUR_USERNAME and --password
    YOUR_PASSWORD command line arguments when running the script.):
     ```sh
     ~$ cd moodle-bot
